@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from api.auth import CurrentUser, get_current_user
+from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity
 from api.db import get_db
 from api.routes.reconcile import _ensure_org
 
@@ -35,7 +35,7 @@ class RunSummary(BaseModel):
 def list_runs(
     limit: int = 20,
     offset: int = 0,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(get_api_identity),
 ):
     """Return the most recent reconciliation runs (single and batch)."""
     db     = get_db()
@@ -108,7 +108,7 @@ def list_runs(
 @router.get("/batch/{batch_id}", response_model=BatchReconcileResult)
 def get_batch(
     batch_id: str,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(get_api_identity),
 ):
     """Return full detail for a batch run."""
     db     = get_db()
@@ -193,7 +193,7 @@ def get_batch(
 @router.get("/{run_id}", response_model=ReconcileResult)
 def get_run(
     run_id: str,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(get_api_identity),
 ):
     """Return full detail + exception report for a single run."""
     db     = get_db()
@@ -235,7 +235,7 @@ def get_run(
 @router.get("/{run_id}/exceptions/download")
 def download_exceptions(
     run_id: str,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(get_api_identity),
 ):
     """Stream the exception report as a CSV download."""
     import io

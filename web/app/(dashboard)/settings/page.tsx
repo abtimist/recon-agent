@@ -11,30 +11,83 @@ type AIConfig = {
   has_api_key: boolean;
 };
 
+type ApiToken = {
+  id: string;
+  name: string;
+  token_prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+  scopes: string[];
+};
+
 export default function SettingsPage() {
   const { fetchWithAuth } = useApi();
   const [config, setConfig] = useState<AIConfig | null>(null);
+  const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  // Form states
+  // Form states for AI
   const [provider, setProvider] = useState("groq");
   const [apiKey, setApiKey] = useState("");
   const [modelOverride, setModelOverride] = useState("");
   const [baseUrlOverride, setBaseUrlOverride] = useState("");
 
+  // States for API Tokens
+  const [newTokenName, setNewTokenName] = useState("");
+  const [creatingToken, setCreatingToken] = useState(false);
+  const [rawToken, setRawToken] = useState<string | null>(null);
+
   useEffect(() => {
-    fetchWithAuth("/settings/ai")
-      .then((data: AIConfig) => {
-        setConfig(data);
-        setProvider(data.provider);
-        setModelOverride(data.model_override || "");
-        setBaseUrlOverride(data.base_url_override || "");
+    Promise.all([
+      fetchWithAuth("/settings/ai"),
+      fetchWithAuth("/api-tokens")
+    ])
+      .then(([aiData, tokenData]) => {
+        setConfig(aiData);
+        setProvider(aiData.provider);
+        setModelOverride(aiData.model_override || "");
+        setBaseUrlOverride(aiData.base_url_override || "");
+        setTokens(tokenData || []);
       })
       .catch((err) => setMessage({ text: err.message, type: "error" }))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleCreateToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTokenName.trim()) return;
+    setCreatingToken(true);
+    setRawToken(null);
+    try {
+      const data = await fetchWithAuth("/api-tokens", {
+        method: "POST",
+        body: JSON.stringify({ name: newTokenName }),
+      });
+      setRawToken(data.raw_token);
+      setNewTokenName("");
+      // Refresh token list
+      const tokenList = await fetchWithAuth("/api-tokens");
+      setTokens(tokenList || []);
+    } catch (err: any) {
+      alert("Error creating token: " + err.message);
+    } finally {
+      setCreatingToken(false);
+    }
+  };
+
+  const handleRevokeToken = async (id: string) => {
+    if (!confirm("Are you sure you want to revoke this token? Any script using it will immediately fail.")) return;
+    try {
+      await fetchWithAuth(`/api-tokens/${id}`, { method: "DELETE" });
+      const tokenList = await fetchWithAuth("/api-tokens");
+      setTokens(tokenList || []);
+    } catch (err: any) {
+      alert("Error revoking token: " + err.message);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,6 +247,92 @@ export default function SettingsPage() {
           </div>
 
         </form>
+      </div>
+
+      <div className="flex flex-col gap-2 pt-8">
+        <h2 className="text-2xl font-bold tracking-tight text-white">Personal Access Tokens</h2>
+        <p className="text-gray-400">
+          Generate API tokens for the CLI or programmatic access. Tokens act on behalf of your organization.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-[#0f0f0f] overflow-hidden max-w-4xl">
+        <div className="p-8 space-y-6">
+          <form onSubmit={handleCreateToken} className="flex gap-4 items-end border-b border-white/10 pb-8">
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-medium text-white">New Token Name</label>
+              <input
+                type="text"
+                value={newTokenName}
+                onChange={(e) => setNewTokenName(e.target.value)}
+                placeholder="e.g. CLI Production"
+                className="w-full bg-[#1a1a1a] border border-white/10 text-white rounded-lg p-3 outline-none focus:border-[#AAFF00] transition-colors"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={creatingToken || !newTokenName}
+              className="bg-[#1a1a1a] hover:bg-[#333] border border-white/10 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 h-12"
+            >
+              {creatingToken && <Loader2 className="h-4 w-4 animate-spin" />}
+              Generate Token
+            </button>
+          </form>
+
+          {rawToken && (
+            <div className="p-6 bg-[#AAFF00]/10 border border-[#AAFF00]/20 rounded-lg space-y-3">
+              <h4 className="text-lg font-bold text-[#AAFF00]">Save your new token</h4>
+              <p className="text-sm text-gray-300">
+                This is the only time the token will be displayed. Please copy it now.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-black/50 border border-white/10 p-3 rounded text-[#AAFF00] select-all font-mono">
+                  {rawToken}
+                </code>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-300">Active Tokens</h3>
+            {tokens.length === 0 ? (
+              <p className="text-sm text-gray-500">No active API tokens found.</p>
+            ) : (
+              <div className="divide-y divide-white/5 border border-white/10 rounded-lg overflow-hidden">
+                {tokens.map((t) => (
+                  <div key={t.id} className={`p-4 flex items-center justify-between ${t.revoked_at ? 'opacity-50' : ''}`}>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-white">{t.name}</span>
+                        {t.revoked_at ? (
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Revoked</span>
+                        ) : (
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#AAFF00]/20 text-[#AAFF00]">Active</span>
+                        )}
+                      </div>
+                      <div className="text-xs font-mono text-gray-500 mt-1">
+                        {t.token_prefix}...
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2 space-y-1">
+                        <div>Created: {new Date(t.created_at).toLocaleDateString()}</div>
+                        {t.last_used_at && <div>Last used: {new Date(t.last_used_at).toLocaleDateString()}</div>}
+                      </div>
+                    </div>
+                    {!t.revoked_at && (
+                      <button
+                        onClick={() => handleRevokeToken(t.id)}
+                        className="text-xs text-red-400 hover:text-red-300 font-semibold px-4 py-2 rounded border border-red-500/20 hover:bg-red-500/10 transition-colors"
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

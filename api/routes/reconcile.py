@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from api.auth import CurrentUser, get_current_user
+from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity
 from api.db import get_db
 from core.ai_resolver import resolve_all
 from core.column_mapper import apply_mapping
@@ -95,7 +95,7 @@ class BatchReconcileResult(BaseModel):
 # Helper: ensure the org exists in our DB (first-time users)
 # ---------------------------------------------------------------------------
 
-def _ensure_org(db, user: CurrentUser) -> str:
+def _ensure_org(db, user: CurrentIdentity) -> str:
     """
     Create the org + member records if this is the first time we see this
     Clerk organization.  Returns the internal org UUID.
@@ -156,7 +156,7 @@ async def reconcile(
     amount_tolerance: float   = Form(20.0, ge=0.0),
     date_window_days: int     = Form(5, ge=0, le=60),
 
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(get_api_identity),
 ):
     """
     Run full reconciliation pipeline:
@@ -325,7 +325,7 @@ async def reconcile_batch(
     amount_tolerance: float   = Form(20.0, ge=0.0),
     date_window_days: int     = Form(5, ge=0, le=60),
 
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(get_api_identity),
 ):
     import json
     

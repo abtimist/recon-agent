@@ -27,11 +27,16 @@ CLERK_SECRET_KEY  = os.environ.get("CLERK_SECRET_KEY", "")
 CLERK_ISSUER      = os.environ.get("CLERK_ISSUER", "")
 
 
-class CurrentUser(BaseModel):
+class CurrentIdentity(BaseModel):
     clerk_user_id: str
     org_id: Optional[str] = None
     org_role: Optional[str] = None
     email: Optional[str] = None
+    is_pat: bool = False
+    scopes: list[str] = []
+
+# Alias for backwards compatibility where convenient
+CurrentUser = CurrentIdentity
 
 
 @lru_cache(maxsize=1)
@@ -83,9 +88,72 @@ def get_current_user(
             detail=f"Invalid or expired token: {e}",
         )
 
-    return CurrentUser(
+    return CurrentIdentity(
         clerk_user_id=payload.get("sub", ""),
         org_id=payload.get("org_id"),
         org_role=payload.get("org_role"),
         email=payload.get("email"),
+        is_pat=False,
+    )
+
+def get_api_identity(
+    authorization: str = Header(..., description="Bearer <clerk_jwt> OR Bearer <pat>"),
+) -> CurrentIdentity:
+    """
+    Unified identity resolver.
+    If the token starts with 'ra_live_', it treats it as a PAT.
+    Otherwise, it delegates to Clerk JWT validation.
+    """
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or malformed Authorization header (expected: Bearer <token>)",
+        )
+
+    if not token.startswith("ra_live_"):
+        # MUST be a Clerk JWT
+        return get_current_user(authorization)
+
+    # It MUST be a PAT. Do not fall back to Clerk if this fails.
+    import hashlib
+    from datetime import datetime, timezone
+    from api.db import get_db
+
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    db = get_db()
+
+    result = (
+        db.table("api_tokens")
+        .select("id, org_id, clerk_user_id, scopes, revoked_at")
+        .eq("token_hash", token_hash)
+        .maybe_single()
+        .execute()
+    )
+
+    if not result or not getattr(result, "data", None):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API token.",
+        )
+
+    row = result.data
+    if row.get("revoked_at"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API token has been revoked.",
+        )
+
+    # Update last_used_at asynchronously or just synchronously for now
+    db.table("api_tokens").update(
+        {"last_used_at": datetime.now(timezone.utc).isoformat()}
+    ).eq("id", row["id"]).execute()
+
+    return CurrentIdentity(
+        clerk_user_id=row["clerk_user_id"],
+        org_id=row["org_id"],
+        org_role="system", # Or inherit from creator, but PAT acts on behalf of org
+        email=None,
+        is_pat=True,
+        scopes=row.get("scopes", []),
     )

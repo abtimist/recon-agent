@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 import io
 
-from api.auth import CurrentUser, get_current_user
+from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity
 
 router = APIRouter()
 
@@ -116,7 +116,7 @@ def _stream(content: bytes, media_type: str, filename: str) -> StreamingResponse
 @router.post("/single/excel")
 def export_single_excel(
     payload: SingleResultPayload,
-    _user:   CurrentUser = Depends(get_current_user),
+    _user:   CurrentIdentity = Depends(get_api_identity),
 ):
     """Generate and stream an Excel report for a single reconciliation run."""
     try:
@@ -137,7 +137,7 @@ def export_single_excel(
 @router.post("/single/pdf")
 def export_single_pdf(
     payload: SingleResultPayload,
-    _user:   CurrentUser = Depends(get_current_user),
+    _user:   CurrentIdentity = Depends(get_api_identity),
 ):
     """Generate and stream a PDF report for a single reconciliation run."""
     try:
@@ -156,7 +156,7 @@ def export_single_pdf(
 @router.post("/batch/excel")
 def export_batch_excel(
     payload: BatchResultPayload,
-    _user:   CurrentUser = Depends(get_current_user),
+    _user:   CurrentIdentity = Depends(get_api_identity),
 ):
     """Generate and stream an Excel report for a batch reconciliation run."""
     try:
@@ -176,7 +176,7 @@ def export_batch_excel(
 @router.post("/batch/pdf")
 def export_batch_pdf(
     payload: BatchResultPayload,
-    _user:   CurrentUser = Depends(get_current_user),
+    _user:   CurrentIdentity = Depends(get_api_identity),
 ):
     """Generate and stream a PDF report for a batch reconciliation run."""
     try:
