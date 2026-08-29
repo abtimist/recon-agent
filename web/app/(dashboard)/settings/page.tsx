@@ -338,6 +338,15 @@ export default function SettingsPage() {
                       <div className="text-xs text-gray-500 mt-2 space-y-1">
                         <div>Created: {new Date(t.created_at).toLocaleDateString()}</div>
                         {t.last_used_at && <div>Last used: {new Date(t.last_used_at).toLocaleDateString()}</div>}
+                        {t.scopes && t.scopes.length > 0 && (
+                          <div className="flex gap-1.5 flex-wrap pt-1">
+                            {t.scopes.map(scope => (
+                              <span key={scope} className="px-1.5 py-0.5 rounded-sm bg-white/5 border border-white/10 text-gray-400 text-[10px] uppercase font-mono tracking-wider">
+                                {scope}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                     {!t.revoked_at && (
