@@ -92,12 +92,13 @@ def get_current_user(
     # Fetch plan from DB
     plan = "free"
     org_id = payload.get("org_id")
-    if org_id:
-        from api.db import get_db
-        db = get_db()
-        org_res = db.table("organizations").select("plan").eq("clerk_org_id", org_id).maybe_single().execute()
-        if org_res and getattr(org_res, "data", None):
-            plan = org_res.data.get("plan", "free")
+    effective_org_id = org_id or f"personal_{payload.get('sub')}"
+    
+    from api.db import get_db
+    db = get_db()
+    org_res = db.table("organizations").select("plan").eq("clerk_org_id", effective_org_id).maybe_single().execute()
+    if org_res and getattr(org_res, "data", None):
+        plan = org_res.data.get("plan", "free")
 
     return CurrentIdentity(
         clerk_user_id=payload.get("sub", ""),
