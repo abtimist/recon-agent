@@ -23,7 +23,8 @@ export function useAuthStatus() {
       try {
         const token = await getToken();
         if (!token) return;
-        const res = await fetch("http://localhost:8000/auth/status", {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const res = await fetch(`${apiUrl}/auth/status`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
