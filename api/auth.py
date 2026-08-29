@@ -100,10 +100,15 @@ def get_current_user(
     if org_res and getattr(org_res, "data", None):
         plan = org_res.data.get("plan", "free")
 
+    # If this is a personal workspace (no Clerk org), the user is implicitly the admin.
+    org_role = payload.get("org_role")
+    if not org_id:
+        org_role = "admin"
+
     return CurrentIdentity(
         clerk_user_id=payload.get("sub", ""),
         org_id=org_id,
-        org_role=payload.get("org_role"),
+        org_role=org_role,
         email=payload.get("email"),
         is_pat=False,
         plan=plan,
