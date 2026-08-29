@@ -119,7 +119,31 @@ export default function ReconcilePage() {
         body: formData,
       });
 
-      setResult(data);
+      if (data.status === "queued" || data.status === "processing") {
+        let isDone = false;
+        const currentId = mode === "single" ? data.run_id : data.batch_id;
+        
+        while (!isDone) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const statusEndpoint = mode === "single" ? `/runs/${currentId}/status` : `/runs/batch/${currentId}/status`;
+          const statusCheck = await fetchWithAuth(statusEndpoint);
+          
+          if (statusCheck.status === "completed" || statusCheck.status === "failed") {
+            isDone = true;
+            if (statusCheck.status === "failed" && mode === "single") {
+              throw new Error(statusCheck.error_message || "Reconciliation failed.");
+            }
+          }
+        }
+        
+        // Fetch full result once completed
+        const finalEndpoint = mode === "single" ? `/runs/${currentId}` : `/runs/batch/${currentId}`;
+        const finalResult = await fetchWithAuth(finalEndpoint);
+        setResult(finalResult);
+      } else {
+        setResult(data);
+      }
+
     } catch (err: any) {
       let msg = err.message;
       if (typeof msg !== 'string') {

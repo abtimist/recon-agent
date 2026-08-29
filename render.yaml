@@ -1,0 +1,30 @@
+services:
+  # Single Co-located Web Service (FastAPI + Worker) for $0 MVP
+  - type: web
+    name: recon-agent
+    env: python
+    plan: free
+    buildCommand: "uv sync --extra backend"
+    startCommand: "./start.sh"
+    envVars:
+      # --- Supabase ---
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      
+      # --- Clerk ---
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_ISSUER
+        sync: false
+        
+      # --- Application ---
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MAX_UPLOAD_SIZE
+        value: "52428800"

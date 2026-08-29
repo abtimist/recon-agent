@@ -8,7 +8,7 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 
 DEFAULT_CONFIG = {
-    "api_base_url": "http://127.0.0.1:8000"
+    "api_base_url": "https://api.recon-agent.com"
 }
 
 def load_config() -> dict:

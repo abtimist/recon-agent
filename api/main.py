@@ -25,15 +25,32 @@ app = FastAPI(
     version="1.0.0",
 )
 
+import os
+from fastapi import Request
+from starlette.responses import JSONResponse
+
+MAX_UPLOAD_SIZE = int(os.environ.get("MAX_UPLOAD_SIZE", 50 * 1024 * 1024)) # 50MB default
+
+@app.middleware("http")
+async def limit_upload_size(request: Request, call_next):
+    if request.method == "POST":
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > MAX_UPLOAD_SIZE:
+            return JSONResponse(
+                status_code=413,
+                content={"detail": "Payload too large. Maximum size is 50MB."}
+            )
+    return await call_next(request)
+
 # ---------------------------------------------------------------------------
 # CORS — allow the Next.js frontend (and local dev) to call the API
 # ---------------------------------------------------------------------------
+cors_origins_str = os.environ.get("CORS_ORIGINS", "http://localhost:3000,https://recon-agent.vercel.app")
+allow_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",          # local Next.js dev
-        "https://recon-agent.vercel.app", # replace with your production domain
-    ],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -105,6 +105,29 @@ def list_runs(
     return combined[offset:offset+limit]
 
 
+@router.get("/batch/{batch_id}/status")
+def get_batch_status(
+    batch_id: str,
+    user: CurrentIdentity = Depends(RequiresScope("history")),
+):
+    """Return just the status of a batch."""
+    db     = get_db()
+    org_id = _ensure_org(db, user)
+
+    result = (
+        db.table("recon_batches")
+        .select("status")
+        .eq("id", batch_id)
+        .eq("org_id", org_id)
+        .maybe_single()
+        .execute()
+    )
+
+    if not result or not getattr(result, "data", None):
+        raise HTTPException(status_code=404, detail="Batch not found.")
+        
+    return result.data
+
 @router.get("/batch/{batch_id}", response_model=BatchReconcileResult)
 def get_batch(
     batch_id: str,
@@ -231,6 +254,29 @@ def get_run(
         completed_at=r.get("completed_at"),
     )
 
+
+@router.get("/{run_id}/status")
+def get_run_status(
+    run_id: str,
+    user: CurrentIdentity = Depends(RequiresScope("history")),
+):
+    """Return just the status of a run."""
+    db     = get_db()
+    org_id = _ensure_org(db, user)
+
+    result = (
+        db.table("recon_runs")
+        .select("status, error_message")
+        .eq("id", run_id)
+        .eq("org_id", org_id)
+        .maybe_single()
+        .execute()
+    )
+
+    if not result or not getattr(result, "data", None):
+        raise HTTPException(status_code=404, detail="Run not found.")
+        
+    return result.data
 
 @router.get("/{run_id}/exceptions/download")
 def download_exceptions(

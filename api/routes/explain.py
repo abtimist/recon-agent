@@ -1,15 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Any
 
 from api.auth import CurrentIdentity, get_api_identity, RequiresScope, RequiresTier
 from api.db import get_db
 from api.routes.reconcile import _load_org_ai_config, _ensure_org
-from core.explanation_service import (
-    CFOExplanationResponse,
-    explain_single_result,
-    explain_batch_result
-)
 
 router = APIRouter()
 
@@ -17,18 +13,22 @@ class ExplainRequest(BaseModel):
     type: str  # "single" or "batch"
     result: Any # dict of ReconcileResult or BatchReconcileResult
 
-@router.post("/", response_model=CFOExplanationResponse)
+class ExplainJobAccepted(BaseModel):
+    job_id: str
+    status: str
+    message: str
+
+@router.post("/", response_model=ExplainJobAccepted, status_code=status.HTTP_202_ACCEPTED)
 def explain_result(
     request: ExplainRequest,
     user: CurrentIdentity = Depends(RequiresScope("explain")),
     _tier: CurrentIdentity = Depends(RequiresTier("pro")),
 ):
     """
-    Generate an AI-powered CFO Explanation for a reconciliation result.
-    Does not modify any data or perform any reconciliation.
+    Queue an AI-powered CFO Explanation for a reconciliation result.
+    Returns 202 Accepted and a job_id.
     """
     db = get_db()
-    # Ensure org access logic is executed for security, even if we don't write
     org_id = _ensure_org(db, user)
 
     ai_config = _load_org_ai_config(db, org_id)
@@ -38,20 +38,44 @@ def explain_result(
             status_code=400,
             detail="AI Explanation unavailable — configure an AI provider in Settings."
         )
-
-    # Note: request.result is an arbitrary dict sent by the frontend,
-    # corresponding to the JSON of the already completed run.
-    try:
-        if request.type == "single":
-            explanation = explain_single_result(request.result, ai_config)
-        elif request.type == "batch":
-            explanation = explain_batch_result(request.result, ai_config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid explanation type. Must be 'single' or 'batch'.")
         
-        return explanation
-    except ValueError as e:
-        # Expected errors like parsing failures or API provider errors
-        raise HTTPException(status_code=500, detail=str(e))
+    if request.type not in ("single", "batch"):
+        raise HTTPException(status_code=400, detail="Invalid explanation type. Must be 'single' or 'batch'.")
+
+    job_id = str(uuid.uuid4())
+
+    try:
+        db.table("explain_jobs").insert({
+            "id": job_id,
+            "org_id": org_id,
+            "clerk_user_id": user.clerk_user_id,
+            "job_type": request.type,
+            "status": "queued",
+            "request_data": request.model_dump()["result"]
+        }).execute()
+
+        return ExplainJobAccepted(
+            job_id=job_id,
+            status="queued",
+            message="Explain job queued successfully."
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error during AI generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{job_id}/status")
+def get_explain_status(
+    job_id: str,
+    user: CurrentIdentity = Depends(RequiresScope("explain")),
+):
+    """
+    Poll the status of an explain job.
+    """
+    db = get_db()
+    org_id = _ensure_org(db, user)
+
+    res = db.table("explain_jobs").select("*").eq("id", job_id).eq("org_id", org_id).maybe_single().execute()
+    
+    if not res or not res.data:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    return res.data

@@ -1,110 +1,49 @@
 """
 POST /reconcile
 
-Accepts two uploaded files + column mappings, runs the full reconciliation
-pipeline, persists the result to Supabase, and returns the result.
+Accepts two uploaded files + column mappings, uploads to Supabase Storage, 
+persists the queued job to Supabase, and returns a 202 Accepted.
 
 Multi-tenancy: every DB write is scoped to the org_id from the Clerk JWT.
 """
 
 import io
 import uuid
+import json
 from datetime import datetime, timezone
+from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
-from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity, RequiresScope
+from api.auth import CurrentIdentity, get_api_identity, RequiresScope
 from api.db import get_db
 from api.quota import check_and_increment_quota
-from core.ai_resolver import resolve_all
-from core.column_mapper import apply_mapping
-from core.file_reader import read_file
-from core.matcher import exact_match, fuzzy_match
 
 router = APIRouter()
-
 
 # ---------------------------------------------------------------------------
 # Request / response models
 # ---------------------------------------------------------------------------
 
-class DuplicateGroup(BaseModel):
-    amount: float
-    party: str
-    date: str
-    occurrences: int
-    row_ids: list[str]
-
-class DuplicateReport(BaseModel):
-    source: list[DuplicateGroup]
-    target: list[DuplicateGroup]
-    source_count: int
-    target_count: int
-
-class DashboardSummary(BaseModel):
-    total_amount: float
-    matched_amount: float
-    unmatched_amount: float
-    top_exception_merchants: list[dict]
-    exceptions_by_date: list[dict]
-
-class ReconcileResult(BaseModel):
+class JobAccepted(BaseModel):
     run_id: str
     status: str
-    total_source_rows: int
-    total_matched: int
-    match_rate: float
-    exact_matches: int
-    fuzzy_matches: int
-    ai_matches: int
-    exceptions_count: int
-    exception_report: list[dict]
-    ai_provider: str
-    amount_tolerance: float
-    date_window_days: int
-    duplicates: DuplicateReport
-    summary: DashboardSummary
-    completed_at: str | None = None
+    message: str
 
-class BatchSummary(BaseModel):
-    total_transactions: int
-    total_matched: int
-    total_exceptions: int
-    overall_match_rate: float
-    total_amount: float
-    total_matched_amount: float
-    total_unmatched_amount: float
-    duplicate_source_groups: int
-    duplicate_target_groups: int
-    completed_runs: int
-    failed_runs: int
-
-class BatchRunResult(BaseModel):
-    source_filename: str
-    target_filename: str
+class BatchJobAccepted(BaseModel):
+    batch_id: str
+    run_ids: list[str]
     status: str
-    error: str | None = None
-    result: ReconcileResult | None = None
-
-class BatchReconcileResult(BaseModel):
-    summary: BatchSummary
-    runs: list[BatchRunResult]
-
+    message: str
 
 # ---------------------------------------------------------------------------
 # Helper: ensure the org exists in our DB (first-time users)
 # ---------------------------------------------------------------------------
 
 def _ensure_org(db, user: CurrentIdentity) -> str:
-    """
-    Create the org + member records if this is the first time we see this
-    Clerk organization.  Returns the internal org UUID.
-    """
-    # Fallback to a personal org if the user isn't in a Clerk Organization
     effective_org_id = user.org_id or f"personal_{user.clerk_user_id}"
 
-    # Check if org exists
     result = (
         db.table("organizations")
         .select("id")
@@ -116,7 +55,6 @@ def _ensure_org(db, user: CurrentIdentity) -> str:
     if result and getattr(result, "data", None):
         org_uuid = result.data["id"]
     else:
-        # First time this org is seen — create it
         new_org = (
             db.table("organizations")
             .insert({"clerk_org_id": effective_org_id, "name": "Personal Workspace" if not user.org_id else user.org_id})
@@ -127,7 +65,6 @@ def _ensure_org(db, user: CurrentIdentity) -> str:
         if not org_uuid:
             raise HTTPException(status_code=500, detail="Failed to create organization.")
 
-    # Ensure this user is in the members table
     db.table("organization_members").upsert(
         {
             "org_id":        org_uuid,
@@ -144,8 +81,8 @@ def _ensure_org(db, user: CurrentIdentity) -> str:
 # POST /reconcile
 # ---------------------------------------------------------------------------
 
-@router.post("/", response_model=ReconcileResult)
-async def reconcile(
+@router.post("/", response_model=JobAccepted, status_code=status.HTTP_202_ACCEPTED)
+def reconcile(
     source_file: UploadFile   = File(...,  description="Source CSV/XLSX (e.g. gateway export)"),
     target_file: UploadFile   = File(...,  description="Target CSV/XLSX (e.g. bank statement)"),
 
@@ -160,162 +97,67 @@ async def reconcile(
     user: CurrentIdentity = Depends(get_api_identity),
 ):
     """
-    Run full reconciliation pipeline:
-      1. Parse both files
-      2. Apply column mappings
-      3. Exact match → fuzzy match → AI resolve ambiguous
-      4. Persist result to Supabase
-      5. Return full result including exception report
+    Queue a reconciliation job:
+      1. Upload both files to Supabase storage
+      2. Save the configuration and job in DB as 'queued'
+      3. Return 202 Accepted with a run_id
     """
-    import json
-
     db     = get_db()
     org_id = _ensure_org(db, user)
     run_id = str(uuid.uuid4())
 
-    # Create a "processing" run record immediately so the frontend can poll
-    db.table("recon_runs").insert({
-        "id":              run_id,
-        "org_id":          org_id,
-        "clerk_user_id":   user.clerk_user_id,
-        "status":          "processing",
-        "source_filename": source_file.filename,
-        "target_filename": target_file.filename,
-    }).execute()
-
     try:
         source_mapping = json.loads(source_mapping_json)
         target_mapping = json.loads(target_mapping_json)
-
-        # --- Parse files ---
-        src_bytes = await source_file.read()
-        tgt_bytes = await target_file.read()
         
-        src_io = io.BytesIO(src_bytes)
-        src_io.name = source_file.filename
-        
-        tgt_io = io.BytesIO(tgt_bytes)
-        tgt_io.name = target_file.filename
-        
-        src_raw = read_file(src_io)
-        tgt_raw = read_file(tgt_io)
+        config = {
+            "source_mapping": source_mapping,
+            "target_mapping": target_mapping,
+            "source_amount_mode": source_amount_mode,
+            "target_amount_mode": target_amount_mode,
+            "amount_tolerance": amount_tolerance,
+            "date_window_days": date_window_days,
+        }
 
-        # --- Apply mappings ---
-        src_df, src_bad = apply_mapping(src_raw, source_mapping, amount_mode=source_amount_mode)
-        tgt_df, tgt_bad = apply_mapping(tgt_raw, target_mapping, amount_mode=target_amount_mode)
-
-        from core.reconciliation_service import reconcile_pair
-        ai_config = _load_org_ai_config(db, org_id)
+        # --- Upload files to storage ---
+        src_bytes = source_file.file.read()
+        tgt_bytes = target_file.file.read()
         
-        pair_result = reconcile_pair(
-            src_df=src_df,
-            tgt_df=tgt_df,
-            source_filename=source_file.filename,
-            target_filename=target_file.filename,
-            amount_tolerance=amount_tolerance,
-            date_window_days=date_window_days,
-            ai_config=ai_config
-        )
-        
-        total_source = pair_result["total_source_rows"]
-        total_matched = pair_result["total_matched"]
-        match_rate = pair_result["match_rate"]
-        exact_m_len = pair_result["exact_matches"]
-        fuzzy_m_len = pair_result["fuzzy_matches"]
-        ai_confirmed_len = pair_result["ai_matches"]
-        exceptions = pair_result["exception_report"]
-        duplicate_report = DuplicateReport(**pair_result["duplicates"])
-        dashboard_summary = DashboardSummary(**pair_result["summary"])
+        src_path = f"{org_id}/{run_id}/{source_file.filename}"
+        tgt_path = f"{org_id}/{run_id}/{target_file.filename}"
 
-        # --- Update run record with results ---
-        db.table("recon_runs").update({
-            "status":             "completed",
-            "total_source_rows":  total_source,
-            "total_matched":      total_matched,
-            "match_rate":         match_rate,
-            "exact_matches":      exact_m_len,
-            "fuzzy_matches":      fuzzy_m_len,
-            "ai_matches":         ai_confirmed_len,
-            "exceptions_count":   len(exceptions),
-            "exception_report":   exceptions,
-            "amount_tolerance":   amount_tolerance,
-            "date_window_days":   date_window_days,
-            "duplicates":         pair_result["duplicates"],
-            "summary":            pair_result["summary"],
-            "ai_provider":        ai_config.get("provider", "none"),
-            "completed_at":       datetime.now(timezone.utc).isoformat(),
-        }).eq("id", run_id).execute()
+        db.storage.from_("recon_files").upload(src_path, src_bytes)
+        db.storage.from_("recon_files").upload(tgt_path, tgt_bytes)
 
-        ts = datetime.now(timezone.utc).isoformat()
-        return ReconcileResult(
+        # Create a "queued" run record immediately
+        db.table("recon_runs").insert({
+            "id":              run_id,
+            "org_id":          org_id,
+            "clerk_user_id":   user.clerk_user_id,
+            "status":          "queued",
+            "source_filename": source_file.filename,
+            "target_filename": target_file.filename,
+            "source_file_url": src_path,
+            "target_file_url": tgt_path,
+            "config":          config,
+        }).execute()
+
+        return JobAccepted(
             run_id=run_id,
-            status="completed",
-            total_source_rows=total_source,
-            total_matched=total_matched,
-            match_rate=match_rate,
-            exact_matches=exact_m_len,
-            fuzzy_matches=fuzzy_m_len,
-            ai_matches=ai_confirmed_len,
-            exceptions_count=len(exceptions),
-            exception_report=exceptions,
-            ai_provider=ai_config.get("provider", "none"),
-            amount_tolerance=amount_tolerance,
-            date_window_days=date_window_days,
-            duplicates=duplicate_report,
-            summary=dashboard_summary,
-            completed_at=ts,
+            status="queued",
+            message="Job accepted and queued for processing."
         )
 
     except Exception as e:
-        # Mark the run as failed — never leave it stuck in "processing"
-        db.table("recon_runs").update({
-            "status":        "failed",
-            "error_message": str(e),
-            "completed_at":  datetime.now(timezone.utc).isoformat(),
-        }).eq("id", run_id).execute()
         raise HTTPException(status_code=500, detail=str(e))
 
-
-def _load_org_ai_config(db, org_id: str) -> dict:
-    """Load and decrypt the organization's saved AI config. Falls back to none."""
-    from api.crypto import decrypt
-    from core.ai_resolver import PROVIDERS
-
-    result = (
-        db.table("org_ai_config")
-        .select("*")
-        .eq("org_id", org_id)
-        .maybe_single()
-        .execute()
-    )
-
-    if not result or not getattr(result, "data", None):
-        return {"provider": "none"}
-
-    row      = result.data
-    provider = row.get("provider", "none")
-    meta     = PROVIDERS.get(provider, {})
-
-    api_key = ""
-    if row.get("encrypted_api_key"):
-        try:
-            api_key = decrypt(row["encrypted_api_key"])
-        except Exception:
-            api_key = ""
-
-    return {
-        "provider": provider,
-        "api_key":  api_key,
-        "model":    row.get("model_override") or meta.get("model", ""),
-        "base_url": row.get("base_url_override") or meta.get("base_url"),
-    }
 
 # ---------------------------------------------------------------------------
 # POST /reconcile/batch
 # ---------------------------------------------------------------------------
 
-@router.post("/batch", response_model=BatchReconcileResult)
-async def reconcile_batch(
+@router.post("/batch", response_model=BatchJobAccepted, status_code=status.HTTP_202_ACCEPTED)
+def reconcile_batch(
     source_files: list[UploadFile] = File(..., description="Source CSVs"),
     target_files: list[UploadFile] = File(..., description="Target CSVs"),
 
@@ -328,8 +170,6 @@ async def reconcile_batch(
 
     user: CurrentIdentity = Depends(RequiresScope("reconcile")),
 ):
-    import json
-    
     if len(source_files) != len(target_files):
         raise HTTPException(status_code=400, detail="Mismatched number of source and target files.")
     if len(source_files) > 20:
@@ -343,152 +183,62 @@ async def reconcile_batch(
     # Quota check (fails entirely if quota exceeded before starting)
     check_and_increment_quota(org_id, user.plan, len(source_files))
     
-    source_mapping = json.loads(source_mapping_json)
-    target_mapping = json.loads(target_mapping_json)
-    ai_config = _load_org_ai_config(db, org_id)
-    
-    from core.reconciliation_service import reconcile_pair
-    
-    batch_id = str(uuid.uuid4())
-    # Create the batch record immediately (processing state)
-    db.table("recon_batches").insert({
-        "id":            batch_id,
-        "org_id":        org_id,
-        "clerk_user_id": user.clerk_user_id,
-        "status":        "processing",
-    }).execute()
-
-    runs = []
-    
-    for src_file, tgt_file in zip(source_files, target_files):
-        run_id = str(uuid.uuid4())
-        # Insert initial processing state
-        db.table("recon_runs").insert({
-            "id":              run_id,
-            "org_id":          org_id,
-            "batch_id":        batch_id,
-            "clerk_user_id":   user.clerk_user_id,
-            "status":          "processing",
-            "source_filename": src_file.filename,
-            "target_filename": tgt_file.filename,
-        }).execute()
+    try:
+        source_mapping = json.loads(source_mapping_json)
+        target_mapping = json.loads(target_mapping_json)
         
-        try:
-            src_bytes = await src_file.read()
-            tgt_bytes = await tgt_file.read()
+        config = {
+            "source_mapping": source_mapping,
+            "target_mapping": target_mapping,
+            "source_amount_mode": source_amount_mode,
+            "target_amount_mode": target_amount_mode,
+            "amount_tolerance": amount_tolerance,
+            "date_window_days": date_window_days,
+        }
+        
+        batch_id = str(uuid.uuid4())
+        
+        # Create the batch record
+        db.table("recon_batches").insert({
+            "id":            batch_id,
+            "org_id":        org_id,
+            "clerk_user_id": user.clerk_user_id,
+            "status":        "queued",
+        }).execute()
+
+        run_ids = []
+        for src_file, tgt_file in zip(source_files, target_files):
+            run_id = str(uuid.uuid4())
+            run_ids.append(run_id)
             
-            src_io = io.BytesIO(src_bytes)
-            src_io.name = src_file.filename
-            tgt_io = io.BytesIO(tgt_bytes)
-            tgt_io.name = tgt_file.filename
+            src_bytes = src_file.file.read()
+            tgt_bytes = tgt_file.file.read()
             
-            src_raw = read_file(src_io)
-            tgt_raw = read_file(tgt_io)
+            src_path = f"{org_id}/{run_id}/{src_file.filename}"
+            tgt_path = f"{org_id}/{run_id}/{tgt_file.filename}"
+
+            db.storage.from_("recon_files").upload(src_path, src_bytes)
+            db.storage.from_("recon_files").upload(tgt_path, tgt_bytes)
+
+            # Insert initial queued state
+            db.table("recon_runs").insert({
+                "id":              run_id,
+                "org_id":          org_id,
+                "batch_id":        batch_id,
+                "clerk_user_id":   user.clerk_user_id,
+                "status":          "queued",
+                "source_filename": src_file.filename,
+                "target_filename": tgt_file.filename,
+                "source_file_url": src_path,
+                "target_file_url": tgt_path,
+                "config":          config,
+            }).execute()
             
-            # Apply mappings
-            src_df, _ = apply_mapping(src_raw, source_mapping, amount_mode=source_amount_mode)
-            tgt_df, _ = apply_mapping(tgt_raw, target_mapping, amount_mode=target_amount_mode)
-            
-            pair_result = reconcile_pair(
-                src_df=src_df,
-                tgt_df=tgt_df,
-                source_filename=src_file.filename,
-                target_filename=tgt_file.filename,
-                amount_tolerance=amount_tolerance,
-                date_window_days=date_window_days,
-                ai_config=ai_config
-            )
-            
-            # Update DB with result
-            db.table("recon_runs").update({
-                "status":             "completed",
-                "total_source_rows":  pair_result["total_source_rows"],
-                "total_matched":      pair_result["total_matched"],
-                "match_rate":         pair_result["match_rate"],
-                "exact_matches":      pair_result["exact_matches"],
-                "fuzzy_matches":      pair_result["fuzzy_matches"],
-                "ai_matches":         pair_result["ai_matches"],
-                "exceptions_count":   pair_result["exceptions_count"],
-                "exception_report":   pair_result["exception_report"],
-                "amount_tolerance":   amount_tolerance,
-                "date_window_days":   date_window_days,
-                "duplicates":         pair_result["duplicates"],
-                "summary":            pair_result["summary"],
-                "ai_provider":        ai_config.get("provider", "none"),
-                "completed_at":       datetime.now(timezone.utc).isoformat(),
-            }).eq("id", run_id).execute()
-            
-            run_ts = datetime.now(timezone.utc).isoformat()
-            result = ReconcileResult(
-                run_id=run_id,
-                status="completed",
-                total_source_rows=pair_result["total_source_rows"],
-                total_matched=pair_result["total_matched"],
-                match_rate=pair_result["match_rate"],
-                exact_matches=pair_result["exact_matches"],
-                fuzzy_matches=pair_result["fuzzy_matches"],
-                ai_matches=pair_result["ai_matches"],
-                exceptions_count=pair_result["exceptions_count"],
-                exception_report=pair_result["exception_report"],
-                ai_provider=ai_config.get("provider", "none"),
-                amount_tolerance=amount_tolerance,
-                date_window_days=date_window_days,
-                duplicates=DuplicateReport(**pair_result["duplicates"]),
-                summary=DashboardSummary(**pair_result["summary"]),
-                completed_at=run_ts,
-            )
-            runs.append(BatchRunResult(
-                source_filename=src_file.filename,
-                target_filename=tgt_file.filename,
-                status="completed",
-                result=result
-            ))
-        except Exception as e:
-            # Mark as failed in DB
-            db.table("recon_runs").update({
-                "status":        "failed",
-                "error_message": str(e),
-                "completed_at":  datetime.now(timezone.utc).isoformat(),
-            }).eq("id", run_id).execute()
-            runs.append(BatchRunResult(
-                source_filename=src_file.filename,
-                target_filename=tgt_file.filename,
-                status="failed",
-                error=str(e)
-            ))
-            
-    # Aggregate summary
-    total_transactions = sum(r.result.total_source_rows for r in runs if r.status == "completed" and r.result)
-    total_matched = sum(r.result.total_matched for r in runs if r.status == "completed" and r.result)
-    total_exceptions = sum(r.result.exceptions_count for r in runs if r.status == "completed" and r.result)
-    overall_match_rate = min(100.0, round(100 * total_matched / total_transactions, 2)) if total_transactions else 0.0
-    
-    total_amount = sum(r.result.summary.total_amount for r in runs if r.status == "completed" and r.result)
-    total_matched_amount = sum(r.result.summary.matched_amount for r in runs if r.status == "completed" and r.result)
-    total_unmatched_amount = sum(r.result.summary.unmatched_amount for r in runs if r.status == "completed" and r.result)
-    
-    dup_source = sum(r.result.duplicates.source_count for r in runs if r.status == "completed" and r.result)
-    dup_target = sum(r.result.duplicates.target_count for r in runs if r.status == "completed" and r.result)
-    
-    summary = BatchSummary(
-        total_transactions=total_transactions,
-        total_matched=total_matched,
-        total_exceptions=total_exceptions,
-        overall_match_rate=overall_match_rate,
-        total_amount=total_amount,
-        total_matched_amount=total_matched_amount,
-        total_unmatched_amount=total_unmatched_amount,
-        duplicate_source_groups=dup_source,
-        duplicate_target_groups=dup_target,
-        completed_runs=sum(1 for r in runs if r.status == "completed"),
-        failed_runs=sum(1 for r in runs if r.status == "failed")
-    )
-    
-    # Mark batch as completed
-    db.table("recon_batches").update({
-        "status":       "completed",
-        "summary":      summary.model_dump(),
-        "completed_at": datetime.now(timezone.utc).isoformat(),
-    }).eq("id", batch_id).execute()
-    
-    return BatchReconcileResult(summary=summary, runs=runs)
+        return BatchJobAccepted(
+            batch_id=batch_id,
+            run_ids=run_ids,
+            status="queued",
+            message="Batch jobs accepted and queued for processing."
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

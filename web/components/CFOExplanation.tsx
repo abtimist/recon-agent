@@ -28,7 +28,24 @@ export default function CFOExplanation({ type, result }: CFOExplanationProps) {
           result,
         }),
       });
-      setExplanation(response);
+
+      if (response.status === "queued" || response.status === "processing") {
+        let isDone = false;
+        let currentStatus = response;
+        while (!isDone) {
+          await new Promise(r => setTimeout(r, 2000));
+          currentStatus = await fetchWithAuth(`/explain/${response.job_id}/status`);
+          if (currentStatus.status === "completed" || currentStatus.status === "failed") {
+            isDone = true;
+            if (currentStatus.status === "failed") {
+              throw new Error(currentStatus.error_message || "Explanation failed.");
+            }
+          }
+        }
+        setExplanation(currentStatus.response_data);
+      } else {
+        setExplanation(response);
+      }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred while generating the explanation.");
     } finally {

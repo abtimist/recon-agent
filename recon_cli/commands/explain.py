@@ -11,13 +11,52 @@ def explain(
 ):
     is_json = ctx.obj.get("json", False)
     
-    payload = {"run_id": run_id}
-    
     try:
+        from recon_cli.client import api_get
+        import time
+
         if not is_json:
-            console.print(f"Requesting CFO Explanation for run {run_id}... (This may take a moment)")
+            console.print(f"Fetching run {run_id} details...")
             
-        data = api_post("/explain/", json=payload, timeout=120.0)
+        run_data = api_get(f"/runs/{run_id}")
+        
+        payload = {
+            "type": "single",
+            "result": run_data
+        }
+        
+        if not is_json:
+            with console.status("[bold cyan]Requesting CFO Explanation...[/bold cyan]") as status:
+                job_accepted = api_post("/explain/", json=payload, timeout=120.0)
+                job_id = job_accepted.get("job_id")
+                
+                status.update("[bold cyan]Job queued. Waiting for worker to process...[/bold cyan]")
+                
+                while True:
+                    time.sleep(2)
+                    job_status = api_get(f"/explain/{job_id}/status")
+                    s = job_status.get("status")
+                    
+                    if s == "processing":
+                        status.update("[bold cyan]Worker is processing the job...[/bold cyan]")
+                    elif s == "completed":
+                        status.update("[bold cyan]Explanation generated![/bold cyan]")
+                        data = job_status.get("response_data")
+                        break
+                    elif s == "failed":
+                        raise ReconAPIError(500, job_status.get("error_message") or "Explain job failed")
+        else:
+            job_accepted = api_post("/explain/", json=payload, timeout=120.0)
+            job_id = job_accepted.get("job_id")
+            while True:
+                time.sleep(2)
+                job_status = api_get(f"/explain/{job_id}/status")
+                s = job_status.get("status")
+                if s == "completed":
+                    data = job_status.get("response_data")
+                    break
+                elif s == "failed":
+                    raise ReconAPIError(500, job_status.get("error_message") or "Explain job failed")
         
         if is_json:
             print_json(data)

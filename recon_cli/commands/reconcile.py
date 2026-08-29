@@ -27,18 +27,53 @@ def run_reconcile(
                 "target_file": (target.name, t_file),
             }
             data = {
-                "ai_provider": ai_provider,
+                "source_mapping_json": "{}",
+                "target_mapping_json": "{}",
+                "source_amount_mode": "single",
+                "target_amount_mode": "single",
                 "amount_tolerance": amount_tolerance,
                 "date_window_days": date_window
             }
-            if mapping_id:
-                data["mapping_id"] = mapping_id
+
+            from recon_cli.client import api_get
+            import time
 
             if not is_json:
-                with console.status("[bold cyan]Reconciling files... This may take a moment.[/bold cyan]"):
-                    result = api_post("/reconcile/", data=data, files=files, timeout=300.0)
+                with console.status("[bold cyan]Uploading and queueing reconciliation job...[/bold cyan]") as status:
+                    job_accepted = api_post("/reconcile/", data=data, files=files, timeout=300.0)
+                    run_id = job_accepted.get("run_id")
+                    
+                    if not run_id:
+                        raise ReconAPIError(500, "Failed to get run_id from API")
+                        
+                    status.update("[bold cyan]Job queued. Waiting for worker to process...[/bold cyan]")
+                    
+                    # Poll for completion
+                    while True:
+                        time.sleep(2)
+                        job_status = api_get(f"/runs/{run_id}/status")
+                        s = job_status.get("status")
+                        
+                        if s == "processing":
+                            status.update("[bold cyan]Worker is processing the job...[/bold cyan]")
+                        elif s == "completed":
+                            status.update("[bold cyan]Job completed! Fetching results...[/bold cyan]")
+                            break
+                        elif s == "failed":
+                            raise ReconAPIError(500, job_status.get("error_message") or "Job failed")
+                    
+                    result = api_get(f"/runs/{run_id}")
             else:
-                result = api_post("/reconcile/", data=data, files=files, timeout=300.0)
+                job_accepted = api_post("/reconcile/", data=data, files=files, timeout=300.0)
+                run_id = job_accepted.get("run_id")
+                while True:
+                    time.sleep(2)
+                    job_status = api_get(f"/runs/{run_id}/status")
+                    if job_status.get("status") in ("completed", "failed"):
+                        if job_status.get("status") == "failed":
+                            raise ReconAPIError(500, job_status.get("error_message") or "Job failed")
+                        break
+                result = api_get(f"/runs/{run_id}")
 
     except ReconAPIError as e:
         if is_json:
@@ -58,7 +93,7 @@ def run_reconcile(
         return
 
     # Render summary nicely
-    print_success(f"Reconciliation Run Completed (ID: {result.get('id', 'N/A')})")
+    print_success(f"Reconciliation Run Completed (ID: {result.get('run_id', 'N/A')})")
     
     summary = result.get("summary", {})
     
