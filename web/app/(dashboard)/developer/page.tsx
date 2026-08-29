@@ -82,7 +82,7 @@ export default function DeveloperHub() {
               Install the Package
             </h4>
             <div className="bg-muted/50 p-4 rounded-lg font-mono text-sm border border-border/50 text-foreground">
-              pip install git+https://github.com/abtimist/recon-agent.git
+              pip install recon-agent
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               * Requires Python 3.10 or higher.
