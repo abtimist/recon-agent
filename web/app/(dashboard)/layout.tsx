@@ -11,6 +11,7 @@ import {
   Database,
   Crown,
   ShieldCheck,
+  Terminal,
 } from "lucide-react";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
 
@@ -28,6 +29,7 @@ export default function DashboardLayout({
     { name: "History", href: "/history", icon: History },
     { name: "Mappings", href: "/mappings", icon: Database },
     { name: "AI Settings", href: "/settings", icon: Settings },
+    { name: "Developer", href: "/developer", icon: Terminal },
   ];
 
   return (
