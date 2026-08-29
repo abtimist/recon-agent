@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Terminal, Book, Key, Code, ArrowRight, Github } from "lucide-react";
+import { Terminal, Book, Key, Code, ArrowRight } from "lucide-react";
 
 export default function DeveloperHub() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.recon-agent.com";
