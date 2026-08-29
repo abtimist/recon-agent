@@ -69,15 +69,15 @@ class RunSummary(BaseModel):
     id: str
     is_batch: bool
     status: str
-    source_filename: Optional[str]
-    target_filename: Optional[str]
-    total_source_rows: Optional[int]
-    total_matched: Optional[int]
-    match_rate: Optional[float]
-    exceptions_count: Optional[int]
-    ai_provider: Optional[str]
+    source_filename: Optional[str] = None
+    target_filename: Optional[str] = None
+    total_source_rows: Optional[int] = None
+    total_matched: Optional[int] = None
+    match_rate: Optional[float] = None
+    exceptions_count: Optional[int] = None
+    ai_provider: Optional[str] = None
     created_at: str
-    completed_at: Optional[str]
+    completed_at: Optional[str] = None
     # For batch summaries
     completed_runs: Optional[int] = None
     failed_runs: Optional[int] = None
@@ -137,7 +137,7 @@ def list_runs(
         ))
         
     for b in (batch_res.data or []):
-        s = b.get("summary", {})
+        s = b.get("summary") or {}
         combined.append(RunSummary(
             id=b["id"],
             is_batch=True,
