@@ -21,22 +21,28 @@ dependencies = [
     "pydantic>=2.0",
     "python-multipart>=0.0.9",
     "openpyxl>=3.1",
-    "reportlab>=4.0"
+    "reportlab>=4.0",
+    "typer>=0.12",
+    "rich>=13.7",
+    "keyring>=25.0"
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    "respx>=0.21"
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# Placeholder for Phase 4 CLI
-# [project.scripts]
-# recon = "recon_cli.main:app"
+[tool.hatch.build.targets.wheel]
+packages = ["recon_cli", "core", "api"]
+
+[project.scripts]
+recon = "recon_cli.main:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

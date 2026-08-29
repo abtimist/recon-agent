@@ -17,7 +17,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import reconcile, history, mappings, settings, explain, reports, tokens
+from api.routes import reconcile, history, mappings, settings, explain, reports, tokens, auth
 
 app = FastAPI(
     title="Recon Agent API",
@@ -46,6 +46,7 @@ app.include_router(reconcile.router, prefix="/reconcile", tags=["reconcile"])
 app.include_router(history.router,   prefix="/runs",      tags=["history"])
 app.include_router(mappings.router,  prefix="/mappings",  tags=["mappings"])
 app.include_router(settings.router,  prefix="/settings",  tags=["settings"])
+app.include_router(auth.router,      prefix="/auth",      tags=["auth"])
 app.include_router(explain.router,   prefix="/explain",   tags=["explain"])
 app.include_router(reports.router,   prefix="/export",    tags=["export"])
 app.include_router(tokens.router,    prefix="/api-tokens",tags=["tokens"])

@@ -34,10 +34,58 @@ cd /home/abhishek/PROJECTS/recon-agent/web
 npm run dev
 ```
 
-Visit: `http://localhost:3000`
+## Command Line Interface (CLI)
 
-## Required Environment Variables
+Recon Agent includes a powerful CLI that acts as a first-class client to the FastAPI backend. It allows you to automate reconciliations, view history, export reports, and generate AI explanations straight from the terminal.
 
+### Installation
+
+Install locally via pip or uv:
+
+```bash
+pip install -e .
+# or
+uv pip install -e .
+```
+
+This makes the `recon` command globally available. 
+
+```bash
+recon --help
+```
+
+### Usage
+
+1. **Login**: Generate a Personal Access Token in the Web UI, then run:
+   ```bash
+   recon login
+   ```
+2. **Reconcile**:
+   ```bash
+   recon reconcile source.csv target.csv
+   ```
+3. **History**:
+   ```bash
+   recon history
+   ```
+4. **Machine Readable output**:
+   ```bash
+   recon history --json
+   ```
+
+## Documentation
+
+- [Docs Directory](docs/)
+- [Phase 1: Feature 1–7 Audit](docs/platform-integration-audit.md)
+- [Phase 2: Platform Foundations](docs/phase-2-foundations-report.md)
+- [Phase 3: API Authentication](docs/api-authentication.md)
+- [Phase 4: CLI Documentation](docs/cli.md)
+
+## Development
+
+```bash
+uv sync
+```
 Create `.env` (root) and `web/.env.local` with these values.
 
 ### Root `.env`
