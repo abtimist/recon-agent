@@ -1,0 +1,200 @@
+reference,merchant_name,credited_amount,settlement_date
+txn_1000,"Rodriguez, Figueroa and Sanchez",32147.2,2026-08-01
+txn_1001,Doyle Ltd,7407.13,2026-08-04
+txn_1002,"Mcclain, Miller and Henderson",44662.89,2026-08-03
+txn_1003,Davis and Sons,2073.24,2026-08-03
+txn_1004,"Guzman, Hoffman and Baldwin",25515.09,2026-08-01
+txn_1005,"Gardner, Robinson and Lawrence",35942.97,2026-08-18
+txn_1006,Blake and Sons,22734.76,2026-08-09
+txn_1007,"Henderson, Ramirez and Lewis",40388.05,2026-08-14
+txn_1008,Garcia-James,8196.24,2026-08-11
+BSET-846335,Abbott-Munoz,19303.98,2026-08-16
+txn_1010,Blair PLC,27043.29,2026-08-13
+txn_1011,Dudley Group,15012.32,2026-08-21
+txn_1012,Arnold Ltd,43154.49,2026-08-19
+txn_1013,"Mcclure, Ward and Lee",3928.19,2026-08-08
+txn_1014,Williams and Sons,42838.23,2026-08-04
+txn_1015,Galloway-Wyatt,22943.81,2026-08-12
+txn_1016,James Group,18075.33,2026-08-09
+txn_1017,"Flowers, Martin and Kelly",4034.42,2026-08-21
+txn_1018,"Adams, Zuniga and Wong",36591.78,2026-08-06
+txn_1019,"Reid, Ferguson and Sanchez",13862.42,2026-08-21
+BSET-671088,Gray-Mayo,11370.26,2026-08-12
+txn_1021,"Hawkins, Cohen and Cameron",40349.77,2026-08-13
+BSET-844151,Perez,10941.68,2026-08-23
+txn_1023,Morales-Jones,44291.82,2026-08-21
+txn_1024,"Walter, Edwards and Rios",13603.02,2026-08-08
+BSET-149811,Wilkerson-Day,37476.52,2026-08-16
+txn_1026,Taylor-Mcgee,25708.49,2026-08-03
+txn_1027,"Baker, Richards and Hurst",8058.74,2026-08-06
+txn_1028,Cox-Osborn,3644.62,2026-08-13
+txn_1030,Callahan and Sons,43108.6,2026-08-01
+txn_1031,"Moore, Becker and Carlson",6158.55,2026-08-18
+txn_1032,James-Ferrell,17338.69,2026-08-10
+BSET-279786,Le Maldonado and Herrera,38216.23,2026-08-19
+txn_1035,"Peterson, Carter and Moore",8065.54,2026-08-06
+BSET-276183,Mckay,39040.54,2026-08-18
+txn_1037,"Gill, Romero and Rodriguez",46490.38,2026-08-10
+txn_1039,Brooks and Sons,4725.16,2026-08-16
+txn_1040,"Ashley, Nielsen and Sellers",26868.96,2026-08-05
+txn_1041,"Nguyen, Smith and Hickman",24026.48,2026-08-18
+txn_1042,Allen-Allen,26619.85,2026-08-20
+txn_1043,"Arroyo, Miller and Tucker",10973.35,2026-08-18
+BSET-992842,Anderson Group,32668.22,2026-08-16
+txn_1046,"Martin, Rose and Obrien",17235.24,2026-08-19
+txn_1047,Hickman Ltd,29627.79,2026-08-01
+txn_1048,"Harris, Collins and Carney",31739.6,2026-08-08
+txn_1049,"Brooks, Lam and Hayes",2054.94,2026-08-11
+txn_1050,Walker LLC,12281.23,2026-08-16
+txn_1051,Chapman and Sons,7049.44,2026-08-19
+txn_1052,"Robinson, Jones and Welch",12524.69,2026-08-16
+txn_1053,Jones Inc,5298.08,2026-08-14
+txn_1054,Jones-Young,20849.56,2026-08-02
+txn_1055,"Washington, Ryan and Cummings",49216.18,2026-08-04
+txn_1056,"Johnston, Sanchez and Kennedy",36546.57,2026-08-04
+txn_1057,Lee-Davis,9915.34,2026-08-15
+txn_1058,Gomez-Jenkins,9582.66,2026-08-15
+txn_1059,"Brown, Valdez and Lucas",46188.67,2026-08-15
+txn_1062,"West, Henderson and Ramirez",42510.44,2026-08-06
+BSET-464656,Baxter,24327.23,2026-08-17
+txn_1064,"Garcia, Pearson and Fernandez",13627.55,2026-08-15
+txn_1065,Novak and Sons,34981.28,2026-08-18
+txn_1066,Russell Group,24590.23,2026-08-07
+txn_1067,Hancock Inc,48449.26,2026-08-19
+txn_1068,Gray Group,16023.44,2026-08-02
+txn_1069,House-Glover,25391.09,2026-08-17
+BSET-821414,Henderson-Bernard,48058.36,2026-08-05
+txn_1071,"Stanley, Tucker and Lee",20486.89,2026-08-19
+txn_1072,Novak PLC,29928.7,2026-08-20
+txn_1073,"Daniels, Adkins and Brown",33039.97,2026-08-19
+txn_1074,"Woods, Calhoun and Schmidt",46767.96,2026-08-07
+txn_1075,Yu Inc,16052.1,2026-08-09
+txn_1076,Jones Inc,33748.67,2026-08-10
+txn_1077,"Hensley, Powell and David",46486.41,2026-08-03
+txn_1079,Sandoval-Cunningham,4126.41,2026-08-07
+BSET-750981,Donovan-Harris,7055.49,2026-08-14
+txn_1081,Allen-Foster,22180.58,2026-08-18
+txn_1082,"Brewer, Bryant and Hickman",49368.04,2026-08-21
+txn_1083,Smith PLC,33559.23,2026-08-18
+txn_1084,"Ferrell, Jones and Lewis",33337.74,2026-08-05
+txn_1085,Anderson-Bailey,44540.78,2026-08-18
+txn_1086,Suarez LLC,14443.09,2026-08-07
+txn_1087,Moore-Bass,31894.78,2026-08-09
+txn_1088,"Turner, Riggs and Roman",12930.5,2026-08-02
+txn_1089,"Smith, Montoya and Evans",21467.0,2026-08-09
+txn_1090,"Garcia, Humphrey and Baker",17011.05,2026-08-05
+txn_1091,Newton and Sons,13466.79,2026-08-15
+txn_1092,Campbell-Clark,21670.5,2026-08-01
+txn_1093,Harris-Walters,47280.02,2026-08-05
+txn_1094,Wagner-King,41812.45,2026-08-19
+txn_1095,Davis Group,21774.44,2026-08-02
+BSET-137174,Williams-Cook,44998.83,2026-08-03
+BSET-739945,Whitney Ramos,18005.23,2026-08-20
+BSET-990957,Hoffman-Rodriguez,46322.88,2026-08-12
+txn_1099,"Mckee, Gardner and Davenport",1720.16,2026-08-11
+txn_1100,"Tran, Jordan and Williams",33660.4,2026-08-08
+txn_1101,Nolan-Flynn,39475.04,2026-08-04
+txn_1102,Nolan and Sons,2416.87,2026-08-16
+txn_1103,"Wright, Garcia and Deleon",40921.04,2026-08-15
+txn_1104,Dickson-Brady,41116.55,2026-08-08
+txn_1105,Hancock and Sons,33171.64,2026-08-13
+txn_1106,Johnson-Doyle,43285.47,2026-08-09
+txn_1107,Patton-Jenkins,25715.58,2026-08-18
+txn_1108,"Shields, Cochran and Adams",1866.23,2026-08-09
+txn_1109,"Rodriguez, Brennan and Garrison",48145.45,2026-08-09
+txn_1110,Gonzalez Group,30024.89,2026-08-12
+txn_1111,Torres-Pope,30507.34,2026-08-17
+txn_1112,Walker Ltd,45025.48,2026-08-07
+txn_1113,Ross LLC,35584.87,2026-08-01
+txn_1114,Rasmussen LLC,40422.29,2026-08-07
+txn_1115,May-Ross,3963.7,2026-08-11
+txn_1116,"Rivera, Johnson and Wiley",33332.48,2026-08-04
+txn_1117,White-Estes,15809.59,2026-08-14
+txn_1118,Johnson-Carlson,35011.82,2026-08-18
+txn_1119,Chandler-Edwards,21312.09,2026-08-13
+txn_1120,"Joyce, Wilson and Lam",45188.87,2026-08-20
+txn_1121,Scott Ltd,20600.72,2026-08-01
+txn_1122,Smith-Frost,10904.04,2026-08-19
+txn_1123,"Mcdaniel, Bentley and Mclaughlin",16451.34,2026-08-15
+txn_1124,Diaz Inc,11063.78,2026-08-16
+txn_1125,"Mccall, Hanson and Alvarado",36930.09,2026-08-03
+txn_1126,Cortez LLC,33360.76,2026-08-20
+txn_1127,"Parker, Ortiz and Powell",41011.96,2026-08-08
+txn_1128,Spencer-Lee,11619.71,2026-08-07
+txn_1129,"Bentley, Byrd and Orr",2787.58,2026-08-16
+txn_1130,"Carroll, Sullivan and Bass",38540.22,2026-08-15
+txn_1131,Mitchell-Jordan,31667.01,2026-08-07
+txn_1132,"Lawson, Morris and Ramos",20282.82,2026-08-05
+txn_1133,"Lewis, Kennedy and Santana",770.41,2026-08-04
+txn_1134,"Jackson, Miller and Robertson",40303.44,2026-08-17
+txn_1135,"Harvey, Davis and Crane",28091.59,2026-08-04
+txn_1137,Hernandez Inc,29974.89,2026-08-15
+txn_1138,Riggs PLC,36104.06,2026-08-17
+BSET-603634,Gibson,45387.89,2026-08-18
+txn_1140,Higgins Group,37712.95,2026-08-21
+txn_1141,Ross-Hernandez,38994.9,2026-08-16
+txn_1142,"Smith, Potter and Carrillo",14088.29,2026-08-03
+txn_1143,Osborne and Sons,17124.45,2026-08-18
+txn_1144,Brock Ltd,7966.12,2026-08-13
+txn_1145,"Marshall, Grant and Lowery",35467.75,2026-08-03
+txn_1146,Bryant Group,16878.63,2026-08-15
+txn_1147,"Schmidt, Hansen and Stewart",10738.3,2026-08-14
+BSET-529298,Salazar-Ball,38603.75,2026-08-02
+txn_1149,Rivas-Kelley,47152.76,2026-08-10
+txn_1150,Manning Group,47694.8,2026-08-14
+BSET-668636,Green-Wright,36863.57,2026-08-24
+txn_1152,Cannon-Boyd,1936.73,2026-08-11
+BSET-245884,Allen Gonzales and Reeves,40005.11,2026-08-07
+txn_1154,Rogers-Orozco,45392.98,2026-08-19
+txn_1155,Taylor and Sons,1841.55,2026-08-21
+txn_1156,Benson-Mccarthy,43409.14,2026-08-06
+txn_1157,Perry LLC,19265.64,2026-08-07
+txn_1158,"Owens, Brown and Wall",17206.28,2026-08-13
+txn_1159,Stein-Silva,47584.6,2026-08-14
+txn_1160,"Smith, Gilmore and Johnston",4552.63,2026-08-01
+txn_1161,Smith-Bell,47620.02,2026-08-08
+txn_1162,Castaneda-Ashley,39171.04,2026-08-21
+txn_1163,Medina-Navarro,2035.98,2026-08-08
+txn_1164,"Hurst, Freeman and Nelson",1508.81,2026-08-05
+txn_1165,Johnson-Rogers,23941.27,2026-08-04
+txn_1166,"Yates, Ramsey and Pittman",11285.89,2026-08-09
+txn_1167,Hooper PLC,30555.46,2026-08-04
+txn_1168,Meadows PLC,15896.43,2026-08-19
+txn_1169,"Alvarado, Miller and Patterson",15941.88,2026-08-13
+txn_1170,White-Green,35893.23,2026-08-03
+txn_1171,Lewis-Murphy,41613.3,2026-08-08
+txn_1172,Ramirez-Bean,38725.65,2026-08-20
+txn_1173,King-Miller,28513.66,2026-08-02
+txn_1174,Curry Inc,21704.71,2026-08-12
+BSET-683414,Walker-Jones,32553.07,2026-08-04
+txn_1176,Webster and Sons,31954.36,2026-08-15
+txn_1177,Combs PLC,36822.87,2026-08-21
+txn_1178,Allen Group,40498.35,2026-08-18
+txn_1179,"Wilson, Gould and Marshall",41373.86,2026-08-19
+txn_1180,Wang-Jackson,42659.8,2026-08-03
+txn_1181,"Stuart, Higgins and Strickland",22814.7,2026-08-15
+txn_1182,Oconnell Inc,33575.33,2026-08-11
+txn_1183,"Johnson, Collins and Byrd",42622.17,2026-08-06
+txn_1184,Sanders-Espinoza,18063.84,2026-08-09
+txn_1185,Vargas Ltd,44075.84,2026-08-09
+txn_1186,Garcia LLC,26073.05,2026-08-07
+txn_1187,"Burke, Martinez and Riggs",36143.7,2026-08-16
+txn_1188,Reed Group,12396.03,2026-08-16
+txn_1189,"Wood, Hunter and Peterson",24795.66,2026-08-01
+txn_1190,Short-Garcia,11469.02,2026-08-08
+txn_1191,Reid-Poole,29287.0,2026-08-16
+txn_1192,"Hernandez, Thompson and Boyd",17515.99,2026-08-18
+txn_1193,"Nelson, Morton and Medina",35291.32,2026-08-09
+txn_1194,Marshall-Petersen,11911.63,2026-08-07
+txn_1195,"Adams, Christian and Rivas",37272.61,2026-08-06
+txn_1196,Ramirez Group,37046.26,2026-08-09
+txn_1198,"Barnett, Rogers and Snyder",41715.1,2026-08-10
+txn_1199,White-Lewis,9379.59,2026-08-01
+UNKNOWN-0,Peterson-Beard,704.82,2026-08-01
+UNKNOWN-1,"Beard, Peters and Black",745.37,2026-08-01
+UNKNOWN-2,Miller Ltd,1814.61,2026-08-01
+UNKNOWN-3,Freeman-Chang,4748.4,2026-08-01
+UNKNOWN-4,"Alvarez, Joseph and West",3370.41,2026-08-01
+txn_1000,"Rodriguez, Figueroa and Sanchez",32147.2,2026-08-01
+txn_1001,Doyle Ltd,7407.13,2026-08-04
+txn_1002,"Mcclain, Miller and Henderson",44662.89,2026-08-03

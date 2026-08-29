@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+exception_report.csv
+.streamlit/
+.venv/
+.pytest_cache/
+web/node_modules/
+web/.next/
+web/build/
+.vscode/
+.idea/

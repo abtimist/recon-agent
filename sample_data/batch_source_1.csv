@@ -1,0 +1,7 @@
+Txn ID,Date,Description,Amount
+TXN-001,2023-10-01,Amazon Web Services,105.50
+TXN-002,2023-10-02,Uber Ride,25.00
+TXN-003,2023-10-03,Coffee Shop,4.50
+TXN-004,2023-10-04,Monthly Subscription,15.99
+TXN-004-DUP,2023-10-04,Monthly Subscription,15.99
+TXN-005,2023-10-05,GitHub Inc,49.00

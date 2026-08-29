@@ -1,0 +1,6 @@
+Txn ID,Date,Description,Amount
+S2-001,2023-11-01,Google Cloud,300.00
+S2-002,2023-11-02,Software License,99.00
+S2-002-A,2023-11-02,Software License,99.00
+S2-002-B,2023-11-02,Software License,99.00
+S2-003,2023-11-03,Stripe Payout,1050.00

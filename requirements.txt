@@ -1,0 +1,17 @@
+pandas
+rapidfuzz
+faker
+
+google-genai
+python-dateutil
+openai
+fastapi
+uvicorn
+supabase
+python-jose[cryptography]
+cryptography
+httpx
+pydantic
+python-multipart
+openpyxl>=3.1
+reportlab>=4.0

@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --accent: oklch(0.97 0 0);
+  --accent-hover: #ccff33;
+  --accent-dim: #88cc00;
+  --card: oklch(1 0 0);
+  --border: oklch(0.922 0 0);
+  --muted: oklch(0.97 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-dim: var(--accent-dim);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #b3ff00;
+  --primary-foreground: #000000;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #000000;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #b3ff00;
+  --accent-hover: #ccff33;
+  --accent-dim: #88cc00;
+  --accent-foreground: #000000;
+  --destructive: #ef4444;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: rgba(0, 0, 0, 0.1);
+  --ring: #b3ff00;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #b3ff00;
+  --primary-foreground: #000000;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --accent: #b3ff00;
+  --accent-hover: #ccff33;
+  --accent-dim: #88cc00;
+  --accent-foreground: #000000;
+  --destructive: #ef4444;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.05);
+  --ring: #b3ff00;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans bg-black;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Utilities for neon glow */
+@utility neon-glow {
+  box-shadow: 0 0 20px rgba(179, 255, 0, 0.2);
+}
+
+@utility neon-glow-intense {
+  box-shadow: 0 0 30px rgba(179, 255, 0, 0.4);
+}
+
+@utility text-glow {
+  text-shadow: 0 0 10px rgba(179, 255, 0, 0.5);
+}
+
+/* Glassmorphism */
+@utility glass {
+  @apply bg-black/40 backdrop-blur-xl border border-white/10;
+}
