@@ -32,23 +32,33 @@ def export(
             print_error(str(e))
         raise typer.Exit(1)
         
-    payload = {"run_id": run_id}
-    endpoint = f"{base_url}/export/single/{format}"
+    from recon_cli.client import api_get
     
-    # Try single first
+    # Try fetching as single run first
+    try:
+        if not is_json:
+            console.print(f"Fetching run details for {run_id}...")
+        payload = api_get(f"/runs/{run_id}")
+        endpoint = f"{base_url}/export/single/{format}"
+    except Exception as e:
+        # Maybe it's a batch run
+        try:
+            payload = api_get(f"/runs/batch/{run_id}")
+            endpoint = f"{base_url}/export/batch/{format}"
+        except Exception:
+            if is_json:
+                print_json({"error": "Run not found or access denied."})
+            else:
+                print_error("Run not found or access denied.")
+            raise typer.Exit(1)
+    
+    # Now that we have the full payload, send it to the export endpoint
     try:
         with httpx.Client(headers=headers, timeout=60.0) as client:
             if not is_json:
-                console.print(f"Requesting {format.upper()} export for run {run_id}...")
+                console.print(f"Generating {format.upper()} report...")
             
             response = client.post(endpoint, json=payload)
-            
-            if response.status_code == 404:
-                # Try batch
-                payload = {"batch_id": run_id}
-                endpoint = f"{base_url}/export/batch/{format}"
-                response = client.post(endpoint, json=payload)
-                
             response.raise_for_status()
             
             # Determine output filename if not provided

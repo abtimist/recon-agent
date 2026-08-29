@@ -51,7 +51,7 @@ def create_token(
     # Hash for storage
     token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
-    scopes = ["reconcile", "history", "export"]
+    scopes = ["reconcile", "history", "export", "explain"]
 
     result = db.table("api_tokens").insert({
         "org_id": org_id,
