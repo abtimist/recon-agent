@@ -17,6 +17,20 @@ export default function CFOExplanation({ type, result }: CFOExplanationProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (type === "single" && result?.run_id) {
+      setLoading(true);
+      fetchWithAuth(`/explain/run/${result.run_id}`)
+        .then((data) => {
+          setExplanation(data);
+        })
+        .catch(() => {
+          // If 404 or error, just silently let the user generate it
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [type, result?.run_id]);
+
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);

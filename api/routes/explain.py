@@ -82,3 +82,30 @@ def get_explain_status(
         raise HTTPException(status_code=404, detail="Job not found")
         
     return res.data
+
+@router.get("/run/{run_id}")
+def get_explain_by_run(
+    run_id: str,
+    user: CurrentIdentity = Depends(RequiresScope("explain")),
+):
+    """
+    Fetch the latest completed explanation for a specific run ID.
+    """
+    db = get_db()
+    org_id = _ensure_org(db, user)
+
+    res = (
+        db.table("explain_jobs")
+        .select("response_data")
+        .eq("org_id", org_id)
+        .eq("status", "completed")
+        .eq("request_data->>run_id", run_id)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    
+    if not res or not res.data or not res.data[0].get("response_data"):
+        raise HTTPException(status_code=404, detail="Explanation not found for this run")
+        
+    return res.data[0]["response_data"]

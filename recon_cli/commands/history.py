@@ -33,10 +33,10 @@ def main(
                 return
                 
             # Formatting details
-            if "batch_id" in data and "files" not in data:
+            if not data.get("is_batch", False) and "files" not in data:
                 # Single run
                 print_panel(
-                    f"ID: {data.get('id')}\n"
+                    f"ID: {data.get('id') or data.get('run_id')}\n"
                     f"Status: {data.get('status')}\n"
                     f"Match Rate: {data.get('match_rate', 0)}%\n"
                     f"Exceptions: {data.get('exceptions_count', 0)}\n"
