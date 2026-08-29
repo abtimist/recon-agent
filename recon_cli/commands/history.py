@@ -90,7 +90,7 @@ def main(
                     
                 rows.append([
                     run_type.upper(),
-                    run_ident[:8] + "...",
+                    run_ident,
                     item.get("status", ""),
                     rate,
                     exc,
