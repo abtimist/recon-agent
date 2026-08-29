@@ -44,7 +44,7 @@ def explain(
                         data = job_status.get("response_data")
                         break
                     elif s == "failed":
-                        raise ReconAPIError(500, job_status.get("error_message") or "Explain job failed")
+                        raise ReconAPIError(job_status.get("error_message") or "Explain job failed", status_code=500)
         else:
             job_accepted = api_post("/explain/", json=payload, timeout=120.0)
             job_id = job_accepted.get("job_id")
@@ -56,7 +56,7 @@ def explain(
                     data = job_status.get("response_data")
                     break
                 elif s == "failed":
-                    raise ReconAPIError(500, job_status.get("error_message") or "Explain job failed")
+                    raise ReconAPIError(job_status.get("error_message") or "Explain job failed", status_code=500)
         
         if is_json:
             print_json(data)

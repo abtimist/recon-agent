@@ -1,6 +1,6 @@
 [project]
 name = "recon-agent"
-version = "0.1.5"
+version = "0.1.6"
 description = "AI-powered reconciliation agent for finance."
 authors = [{name = "Abtimist", email = "abhishek@abtimist.com"}]
 readme = "README.md"

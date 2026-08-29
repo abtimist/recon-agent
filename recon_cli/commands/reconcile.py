@@ -44,7 +44,7 @@ def run_reconcile(
                     run_id = job_accepted.get("run_id")
                     
                     if not run_id:
-                        raise ReconAPIError(500, "Failed to get run_id from API")
+                        raise ReconAPIError("Failed to get run_id from API", status_code=500)
                         
                     status.update("[bold cyan]Job queued. Waiting for worker to process...[/bold cyan]")
                     
@@ -60,7 +60,7 @@ def run_reconcile(
                             status.update("[bold cyan]Job completed! Fetching results...[/bold cyan]")
                             break
                         elif s == "failed":
-                            raise ReconAPIError(500, job_status.get("error_message") or "Job failed")
+                            raise ReconAPIError(job_status.get("error_message") or "Job failed", status_code=500)
                     
                     result = api_get(f"/runs/{run_id}")
             else:
@@ -71,7 +71,7 @@ def run_reconcile(
                     job_status = api_get(f"/runs/{run_id}/status")
                     if job_status.get("status") in ("completed", "failed"):
                         if job_status.get("status") == "failed":
-                            raise ReconAPIError(500, job_status.get("error_message") or "Job failed")
+                            raise ReconAPIError(job_status.get("error_message") or "Job failed", status_code=500)
                         break
                 result = api_get(f"/runs/{run_id}")
 

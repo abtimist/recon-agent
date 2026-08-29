@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useApi } from "@/lib/api";
-import { Loader2, Download, AlertCircle, CheckCircle2, ChevronRight, XCircle } from "lucide-react";
+import { Loader2, Download, AlertCircle, CheckCircle2, ChevronRight, XCircle, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 type RunSummary = {
@@ -29,11 +29,16 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchRuns = () => {
+    setLoading(true);
     fetchWithAuth("/runs/")
       .then((data) => setRuns(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchRuns();
   }, []);
 
   // Exception download logic moved to detail view for better UX
@@ -45,7 +50,7 @@ export default function HistoryPage() {
     }).format(d);
   };
 
-  if (loading) {
+  if (loading && runs.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#b3ff00]" />
@@ -56,7 +61,17 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-white">History</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight text-white">History</h1>
+          <button 
+            onClick={fetchRuns} 
+            disabled={loading} 
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors border border-white/10 text-sm font-medium disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Sync
+          </button>
+        </div>
         <p className="text-gray-400">
           View past reconciliation runs and download exception reports.
         </p>
