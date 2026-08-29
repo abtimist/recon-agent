@@ -8,7 +8,7 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 
 DEFAULT_CONFIG = {
-    "api_base_url": "https://api.recon-agent.com"
+    "api_base_url": "https://recon-agent-i8mo.onrender.com"
 }
 
 def load_config() -> dict:
