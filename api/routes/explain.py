@@ -5,7 +5,7 @@ from typing import Any
 
 from api.auth import CurrentIdentity, get_api_identity, RequiresScope, RequiresTier
 from api.db import get_db
-from api.routes.reconcile import _load_org_ai_config, _ensure_org
+from api.routes.reconcile import _ensure_org
 
 router = APIRouter()
 
@@ -31,9 +31,12 @@ def explain_result(
     db = get_db()
     org_id = _ensure_org(db, user)
 
-    ai_config = _load_org_ai_config(db, org_id)
-    
-    if ai_config.get("provider", "none") == "none":
+    # Preflight check if AI is configured
+    ai_config_res = db.table("org_ai_config").select("provider").eq("org_id", org_id).maybe_single().execute()
+    provider = "none"
+    if ai_config_res and getattr(ai_config_res, "data", None):
+        provider = ai_config_res.data.get("provider", "none")    
+    if provider == "none":
         raise HTTPException(
             status_code=400,
             detail="AI Explanation unavailable — configure an AI provider in Settings."
