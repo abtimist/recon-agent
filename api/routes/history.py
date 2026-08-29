@@ -8,9 +8,62 @@ from api.auth import CurrentIdentity, get_api_identity, RequiresScope
 from api.db import get_db
 from api.routes.reconcile import _ensure_org
 
-from api.routes.reconcile import _ensure_org, ReconcileResult, BatchReconcileResult, BatchRunResult, BatchSummary, DuplicateReport, DashboardSummary
-
 router = APIRouter()
+
+class DuplicateReport(BaseModel):
+    source: list[dict]
+    target: list[dict]
+    source_count: int
+    target_count: int
+
+class DashboardSummary(BaseModel):
+    total_amount: float
+    matched_amount: float
+    unmatched_amount: float
+    top_exception_merchants: list[dict]
+    exceptions_by_date: list[dict]
+
+class ReconcileResult(BaseModel):
+    run_id: str
+    status: str
+    total_source_rows: int
+    total_matched: int
+    match_rate: float
+    exact_matches: int
+    fuzzy_matches: int
+    ai_matches: int
+    exceptions_count: int
+    exception_report: list[dict]
+    ai_provider: str
+    amount_tolerance: float
+    date_window_days: int
+    duplicates: DuplicateReport
+    summary: DashboardSummary
+    completed_at: Optional[str] = None
+
+class BatchRunResult(BaseModel):
+    source_filename: str
+    target_filename: str
+    status: str
+    result: Optional[ReconcileResult] = None
+    error: Optional[str] = None
+
+class BatchSummary(BaseModel):
+    total_transactions: int
+    total_matched: int
+    total_exceptions: int
+    overall_match_rate: float
+    total_amount: float
+    total_matched_amount: float
+    total_unmatched_amount: float
+    duplicate_source_groups: int
+    duplicate_target_groups: int
+    completed_runs: int
+    failed_runs: int
+
+class BatchReconcileResult(BaseModel):
+    summary: BatchSummary
+    runs: list[BatchRunResult]
 
 class RunSummary(BaseModel):
     id: str
