@@ -8,6 +8,7 @@ from api.auth import CurrentUser, get_current_user
 from api.crypto import decrypt, encrypt
 from api.db import get_db
 from core.ai_resolver import PROVIDERS
+from api.routes.reconcile import _ensure_org
 
 router = APIRouter()
 
@@ -30,10 +31,11 @@ class AIConfigIn(BaseModel):
 def get_ai_config(user: CurrentUser = Depends(get_current_user)):
     """Return the user's current AI config (key presence only, never the key itself)."""
     db     = get_db()
+    org_id = _ensure_org(db, user)
     result = (
-        db.table("user_ai_config")
+        db.table("org_ai_config")
         .select("provider, encrypted_api_key, model_override, base_url_override")
-        .eq("clerk_user_id", user.clerk_user_id)
+        .eq("org_id", org_id)
         .maybe_single()
         .execute()
     )
@@ -71,11 +73,13 @@ def update_ai_config(
 
     db = get_db()
 
+    org_id = _ensure_org(db, user)
+
     # Fetch existing record to preserve the key if not being updated
     existing = (
-        db.table("user_ai_config")
+        db.table("org_ai_config")
         .select("encrypted_api_key")
-        .eq("clerk_user_id", user.clerk_user_id)
+        .eq("org_id", org_id)
         .maybe_single()
         .execute()
     )
@@ -85,15 +89,15 @@ def update_ai_config(
         encrypted_key = encrypt(body.api_key)
 
     upsert_data = {
-        "clerk_user_id":     user.clerk_user_id,
+        "org_id":            org_id,
         "provider":          body.provider,
         "encrypted_api_key": encrypted_key,
         "model_override":    body.model_override,
         "base_url_override": body.base_url_override,
     }
 
-    db.table("user_ai_config").upsert(
-        upsert_data, on_conflict="clerk_user_id"
+    db.table("org_ai_config").upsert(
+        upsert_data, on_conflict="org_id"
     ).execute()
 
     return AIConfigOut(

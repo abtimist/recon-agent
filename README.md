@@ -5,9 +5,16 @@ AI-powered financial reconciliation as a multi-tenant SaaS.
 ## Architecture
 
 - **Frontend**: Next.js 16 + Clerk auth (App Router)
-- **Backend**: FastAPI (Python) — wraps `core/` engine
+- **Backend API**: FastAPI (Python)
+- **Core Engine**: Pure Python reconciliation logic (`core/`)
 - **Database**: Supabase PostgreSQL with RLS
 - **Storage**: Supabase Storage (CSV/XLSX files)
+
+The architecture flows strictly as:
+`Web → FastAPI API → Core Engine → Database`
+
+> [!WARNING]
+> The Command Line Interface (`cli.py`) is currently under reconstruction and is **not** yet the production interface. It will be rebuilt in a future phase to consume the FastAPI REST API using Personal Access Tokens (PATs).
 
 ## Quick Start
 
@@ -60,9 +67,10 @@ This creates the tables and enables RLS policies.
 3. Backend extracts `clerk_org_id` from JWT
 4. Each DB query is scoped to that org — RLS enforces isolation as a backstop
 
-## What's NOT in scope
+## What's NOT in scope for Phase 2
 
-- `core/` (file_reader, column_mapper, matcher, ai_resolver) is unchanged
-- `cli.py` is unchanged
+- The new Typer CLI has not been built yet.
+- Personal Access Tokens (PATs) for machine-to-machine authentication do not exist yet.
+- RBAC and subscription tiers are planned but not yet enforced.
 
-See `api/migrations/001_initial_schema.sql` for the full schema.
+See `api/migrations/001_initial_schema.sql` to `003_org_ai_config.sql` for the full schema.

@@ -204,7 +204,7 @@ async def reconcile(
         tgt_df, tgt_bad = apply_mapping(tgt_raw, target_mapping, amount_mode=target_amount_mode)
 
         from core.reconciliation_service import reconcile_pair
-        ai_config = _load_user_ai_config(db, user.clerk_user_id)
+        ai_config = _load_org_ai_config(db, org_id)
         
         pair_result = reconcile_pair(
             src_df=src_df,
@@ -275,15 +275,15 @@ async def reconcile(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-def _load_user_ai_config(db, clerk_user_id: str) -> dict:
-    """Load and decrypt the user's saved AI config. Falls back to none."""
+def _load_org_ai_config(db, org_id: str) -> dict:
+    """Load and decrypt the organization's saved AI config. Falls back to none."""
     from api.crypto import decrypt
     from core.ai_resolver import PROVIDERS
 
     result = (
-        db.table("user_ai_config")
+        db.table("org_ai_config")
         .select("*")
-        .eq("clerk_user_id", clerk_user_id)
+        .eq("org_id", org_id)
         .maybe_single()
         .execute()
     )
@@ -341,7 +341,7 @@ async def reconcile_batch(
     
     source_mapping = json.loads(source_mapping_json)
     target_mapping = json.loads(target_mapping_json)
-    ai_config = _load_user_ai_config(db, user.clerk_user_id)
+    ai_config = _load_org_ai_config(db, org_id)
     
     from core.reconciliation_service import reconcile_pair
     

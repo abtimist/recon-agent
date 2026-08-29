@@ -4,7 +4,7 @@ from typing import Any
 
 from api.auth import CurrentUser, get_current_user
 from api.db import get_db
-from api.routes.reconcile import _load_user_ai_config, _ensure_org
+from api.routes.reconcile import _load_org_ai_config, _ensure_org
 from core.explanation_service import (
     CFOExplanationResponse,
     explain_single_result,
@@ -28,9 +28,9 @@ def explain_result(
     """
     db = get_db()
     # Ensure org access logic is executed for security, even if we don't write
-    _ensure_org(db, user)
+    org_id = _ensure_org(db, user)
 
-    ai_config = _load_user_ai_config(db, user.clerk_user_id)
+    ai_config = _load_org_ai_config(db, org_id)
     
     if ai_config.get("provider", "none") == "none":
         raise HTTPException(
