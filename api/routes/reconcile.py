@@ -14,8 +14,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
-from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity
+from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity, RequiresScope
 from api.db import get_db
+from api.quota import check_and_increment_quota
 from core.ai_resolver import resolve_all
 from core.column_mapper import apply_mapping
 from core.file_reader import read_file
@@ -325,7 +326,7 @@ async def reconcile_batch(
     amount_tolerance: float   = Form(20.0, ge=0.0),
     date_window_days: int     = Form(5, ge=0, le=60),
 
-    user: CurrentIdentity = Depends(get_api_identity),
+    user: CurrentIdentity = Depends(RequiresScope("reconcile")),
 ):
     import json
     
@@ -338,6 +339,9 @@ async def reconcile_batch(
 
     db     = get_db()
     org_id = _ensure_org(db, user)
+
+    # Quota check (fails entirely if quota exceeded before starting)
+    check_and_increment_quota(org_id, user.plan, len(source_files))
     
     source_mapping = json.loads(source_mapping_json)
     target_mapping = json.loads(target_mapping_json)

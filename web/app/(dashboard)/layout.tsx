@@ -9,7 +9,10 @@ import {
   History,
   Settings,
   Database,
+  Crown,
+  ShieldCheck,
 } from "lucide-react";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 export default function DashboardLayout({
   children,
@@ -17,6 +20,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { data: authStatus } = useAuthStatus();
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -48,6 +52,20 @@ export default function DashboardLayout({
               }
             }}
           />
+          {authStatus && (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
+                <Crown className="w-3 h-3 text-accent" />
+                <span className="text-xs font-semibold text-accent capitalize">{authStatus.plan}</span>
+              </div>
+              {authStatus.org_role && (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20">
+                  <ShieldCheck className="w-3 h-3 text-blue-400" />
+                  <span className="text-xs font-semibold text-blue-400 capitalize">{authStatus.org_role}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

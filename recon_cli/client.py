@@ -39,8 +39,13 @@ def _handle_response(response: httpx.Response) -> Any:
             )
         elif e.response.status_code == 403:
             raise ReconAPIError(
-                f"Permission denied (403). You do not have access to this resource. Detail: {detail}",
+                f"Permission denied (403). You do not have access to this feature or role. Detail: {detail}",
                 status_code=403
+            )
+        elif e.response.status_code == 429:
+            raise ReconAPIError(
+                f"Quota Exceeded (429). Please upgrade your plan. Detail: {detail}",
+                status_code=429
             )
         elif e.response.status_code == 404:
             raise ReconAPIError(

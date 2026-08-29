@@ -34,6 +34,7 @@ class CurrentIdentity(BaseModel):
     email: Optional[str] = None
     is_pat: bool = False
     scopes: list[str] = []
+    plan: str = "free"
 
 # Alias for backwards compatibility where convenient
 CurrentUser = CurrentIdentity
@@ -88,12 +89,23 @@ def get_current_user(
             detail=f"Invalid or expired token: {e}",
         )
 
+    # Fetch plan from DB
+    plan = "free"
+    org_id = payload.get("org_id")
+    if org_id:
+        from api.db import get_db
+        db = get_db()
+        org_res = db.table("organizations").select("plan").eq("clerk_org_id", org_id).maybe_single().execute()
+        if org_res and getattr(org_res, "data", None):
+            plan = org_res.data.get("plan", "free")
+
     return CurrentIdentity(
         clerk_user_id=payload.get("sub", ""),
-        org_id=payload.get("org_id"),
+        org_id=org_id,
         org_role=payload.get("org_role"),
         email=payload.get("email"),
         is_pat=False,
+        plan=plan,
     )
 
 def get_api_identity(
@@ -149,11 +161,68 @@ def get_api_identity(
         {"last_used_at": datetime.now(timezone.utc).isoformat()}
     ).eq("id", row["id"]).execute()
 
+    # Fetch creator's current role and org plan
+    creator_role = "member"
+    plan = "free"
+    
+    org_res = db.table("organizations").select("id, clerk_org_id, plan").eq("id", row["org_id"]).maybe_single().execute()
+    if org_res and getattr(org_res, "data", None):
+        plan = org_res.data.get("plan", "free")
+        # Find member role
+        member_res = db.table("organization_members").select("role").eq("org_id", row["org_id"]).eq("clerk_user_id", row["clerk_user_id"]).maybe_single().execute()
+        if member_res and getattr(member_res, "data", None):
+            creator_role = member_res.data.get("role", "member")
+        clerk_org_id = org_res.data.get("clerk_org_id")
+    else:
+        clerk_org_id = row["org_id"] # Fallback
+
     return CurrentIdentity(
         clerk_user_id=row["clerk_user_id"],
-        org_id=row["org_id"],
-        org_role="system", # Or inherit from creator, but PAT acts on behalf of org
+        org_id=clerk_org_id,
+        org_role=creator_role,
         email=None,
         is_pat=True,
         scopes=row.get("scopes", []),
+        plan=plan,
     )
+
+class RequiresRole:
+    def __init__(self, required_role: str):
+        self.required_role = required_role
+
+    def __call__(self, user: CurrentIdentity = Depends(get_api_identity)):
+        if user.org_role != self.required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Admin role required. Current role: {user.org_role}"
+            )
+        return user
+
+class RequiresScope:
+    def __init__(self, required_scope: str):
+        self.required_scope = required_scope
+
+    def __call__(self, user: CurrentIdentity = Depends(get_api_identity)):
+        if user.is_pat and self.required_scope not in user.scopes:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"PAT missing required scope: '{self.required_scope}'"
+            )
+        return user
+
+class RequiresTier:
+    def __init__(self, required_tier: str):
+        self.required_tier = required_tier
+
+    def __call__(self, user: CurrentIdentity = Depends(get_api_identity)):
+        # Enterprise > Pro > Free
+        tiers = {"free": 0, "pro": 1, "enterprise": 2}
+        user_tier_val = tiers.get(user.plan.lower(), 0)
+        req_tier_val = tiers.get(self.required_tier.lower(), 0)
+        
+        if user_tier_val < req_tier_val:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Plan upgrade required. Feature needs '{self.required_tier}' but you are on '{user.plan}'."
+            )
+        return user

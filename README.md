@@ -13,8 +13,8 @@ AI-powered financial reconciliation as a multi-tenant SaaS.
 The architecture flows strictly as:
 `Web → FastAPI API → Core Engine → Database`
 
-> [!WARNING]
-> The Command Line Interface (`cli.py`) is currently under reconstruction and is **not** yet the production interface. It will be rebuilt in a future phase to consume the FastAPI REST API using Personal Access Tokens (PATs).
+> [!NOTE]
+> The Command Line Interface (`recon`) is a fully featured CLI that consumes the FastAPI REST API using Personal Access Tokens (PATs).
 
 ## Quick Start
 
@@ -80,6 +80,7 @@ recon --help
 - [Phase 2: Platform Foundations](docs/phase-2-foundations-report.md)
 - [Phase 3: API Authentication](docs/api-authentication.md)
 - [Phase 4: CLI Documentation](docs/cli.md)
+- [Phase 5: Tiers and Roles](docs/tiers-and-roles.md)
 
 ## Development
 
@@ -115,10 +116,4 @@ This creates the tables and enables RLS policies.
 3. Backend extracts `clerk_org_id` from JWT
 4. Each DB query is scoped to that org — RLS enforces isolation as a backstop
 
-## What's NOT in scope for Phase 2
-
-- The new Typer CLI has not been built yet.
-- Personal Access Tokens (PATs) for machine-to-machine authentication do not exist yet.
-- RBAC and subscription tiers are planned but not yet enforced.
-
-See `api/migrations/001_initial_schema.sql` to `003_org_ai_config.sql` for the full schema.
+See `api/migrations/001_initial_schema.sql` to `005_usage_quotas.sql` for the full schema.

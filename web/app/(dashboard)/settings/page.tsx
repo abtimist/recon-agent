@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
 
   // Form states for AI
   const [provider, setProvider] = useState("groq");
@@ -52,7 +53,13 @@ export default function SettingsPage() {
         setBaseUrlOverride(aiData.base_url_override || "");
         setTokens(tokenData || []);
       })
-      .catch((err) => setMessage({ text: err.message, type: "error" }))
+      .catch((err) => {
+        if (err.message.includes("403") || err.message.toLowerCase().includes("admin role required")) {
+          setPermissionDenied(true);
+        } else {
+          setMessage({ text: err.message, type: "error" });
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -118,6 +125,20 @@ export default function SettingsPage() {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#AAFF00]" />
+      </div>
+    );
+  }
+
+  if (permissionDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+          <span className="text-red-500 text-2xl">🔒</span>
+        </div>
+        <h2 className="text-2xl font-bold text-white">Access Denied</h2>
+        <p className="text-gray-400 text-center max-w-md">
+          You need the <strong className="text-white">Admin</strong> role to manage AI settings and API tokens for this organization.
+        </p>
       </div>
     );
   }

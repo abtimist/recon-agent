@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
 
-from api.auth import CurrentUser, get_current_user
+from api.auth import CurrentIdentity, RequiresRole
 from api.crypto import decrypt, encrypt
 from api.db import get_db
 from core.ai_resolver import PROVIDERS
@@ -28,7 +28,7 @@ class AIConfigIn(BaseModel):
 
 
 @router.get("/ai", response_model=AIConfigOut)
-def get_ai_config(user: CurrentUser = Depends(get_current_user)):
+def get_ai_config(user: CurrentIdentity = Depends(RequiresRole("admin"))):
     """Return the user's current AI config (key presence only, never the key itself)."""
     db     = get_db()
     org_id = _ensure_org(db, user)
@@ -60,7 +60,7 @@ def get_ai_config(user: CurrentUser = Depends(get_current_user)):
 @router.put("/ai", response_model=AIConfigOut)
 def update_ai_config(
     body: AIConfigIn,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentIdentity = Depends(RequiresRole("admin")),
 ):
     """
     Update the user's AI config.

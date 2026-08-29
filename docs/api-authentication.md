@@ -27,7 +27,7 @@ Tokens act on behalf of the user's organization and are intended for long-lived 
   - If a token starts with `ra_live_`, the API explicitly treats it as a PAT. 
   - It hashes the token using `SHA-256` and looks it up in the `api_tokens` database table.
 - **Security:** The database stores *only* the SHA-256 hash. The raw token is shown only once at creation.
-- **Identity:** Resolves to the same identity structure as a Clerk JWT (`org_id`, `clerk_user_id`), but sets `is_pat=True` and applies `scopes`.
+- **Identity:** Resolves to the same identity structure as a Clerk JWT (`org_id`, `clerk_user_id`), sets `is_pat=True`, and applies `scopes`. It also inherits the creator's current `org_role` and the organization's current `plan` dynamically at runtime.
 
 ## Authentication Resolution Workflow
 
@@ -51,7 +51,9 @@ The FastAPI `get_api_identity()` dependency evaluates incoming requests as follo
 ## Role-Based Access Control and Scopes
 
 - **Clerk JWTs** rely on Clerk's RBAC (`org_role`).
-- **PATs** rely on an array of `scopes` assigned at creation (currently defaulting to `["reconcile", "history", "export", "read", "write"]`). Future updates will allow users to restrict PATs to specific actions (e.g., read-only access to run history).
+- **PATs** dynamically inherit the current `org_role` of the user who created them (meaning if the user is demoted, their PAT is also demoted).
+- **PAT Scopes** provide a secondary limitation mechanism. A PAT may have the `reconcile` and `history` scopes. Scopes can only restrict privileges, they can never elevate a PAT above the creator's `org_role`.
+- **Tiers/Quotas** are dynamically checked on every request. Both Web and CLI requests are validated against the organization's `plan` limits.
 
 ## Security Measures
 

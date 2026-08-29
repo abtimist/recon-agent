@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any
 
-from api.auth import CurrentUser, get_current_user, CurrentIdentity, get_api_identity
+from api.auth import CurrentIdentity, get_api_identity, RequiresScope, RequiresTier
 from api.db import get_db
 from api.routes.reconcile import _load_org_ai_config, _ensure_org
 from core.explanation_service import (
@@ -20,7 +20,8 @@ class ExplainRequest(BaseModel):
 @router.post("/", response_model=CFOExplanationResponse)
 def explain_result(
     request: ExplainRequest,
-    user: CurrentIdentity = Depends(get_api_identity)
+    user: CurrentIdentity = Depends(RequiresScope("explain")),
+    _tier: CurrentIdentity = Depends(RequiresTier("pro")),
 ):
     """
     Generate an AI-powered CFO Explanation for a reconciliation result.

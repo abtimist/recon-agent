@@ -5,7 +5,7 @@ import hashlib
 from typing import List, Optional
 from datetime import datetime, timezone
 
-from api.auth import CurrentUser, get_current_user
+from api.auth import CurrentIdentity, RequiresRole
 from api.db import get_db
 from api.routes.reconcile import _ensure_org
 
@@ -34,7 +34,7 @@ class TokenResponse(BaseModel):
 @router.post("/", response_model=TokenCreatedResponse)
 def create_token(
     request: CreateTokenRequest,
-    user: CurrentUser = Depends(get_current_user)
+    user: CurrentIdentity = Depends(RequiresRole("admin"))
 ):
     """
     Generate a new Personal Access Token.
@@ -77,7 +77,7 @@ def create_token(
     )
 
 @router.get("/", response_model=List[TokenResponse])
-def list_tokens(user: CurrentUser = Depends(get_current_user)):
+def list_tokens(user: CurrentIdentity = Depends(RequiresRole("admin"))):
     """
     List all tokens for the user's organization.
     """
@@ -111,7 +111,7 @@ def list_tokens(user: CurrentUser = Depends(get_current_user)):
 @router.delete("/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_token(
     token_id: str,
-    user: CurrentUser = Depends(get_current_user)
+    user: CurrentIdentity = Depends(RequiresRole("admin"))
 ):
     """
     Revoke a Personal Access Token.

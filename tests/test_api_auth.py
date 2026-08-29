@@ -47,17 +47,34 @@ def test_api_identity_malformed_pat(mock_get_db):
 def test_api_identity_valid_pat(mock_get_db):
     from api.auth import get_api_identity
     
-    mock_db = mock_get_db
-    mock_execute = mock_db.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
-    
-    # Mock valid token record
-    mock_execute.return_value.data = {
-        "id": "token-123",
-        "org_id": ORG_A,
-        "clerk_user_id": "user_123",
-        "scopes": ["reconcile", "history"],
-        "revoked_at": None
-    }
+    class MockResponse:
+        def __init__(self, data):
+            self.data = data
+            
+    def mock_table(name):
+        from unittest.mock import MagicMock
+        mock_chain = MagicMock()
+        if name == "api_tokens":
+            mock_chain.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MockResponse({
+                "id": "token-123",
+                "org_id": ORG_A,
+                "clerk_user_id": "user_123",
+                "scopes": ["reconcile", "history"],
+                "revoked_at": None
+            })
+        elif name == "organizations":
+            mock_chain.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MockResponse({
+                "id": ORG_A,
+                "clerk_org_id": ORG_A,
+                "plan": "pro"
+            })
+        elif name == "organization_members":
+            mock_chain.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MockResponse({
+                "role": "admin"
+            })
+        return mock_chain
+
+    mock_get_db.return_value.table.side_effect = mock_table
     
     identity = get_api_identity(authorization="Bearer ra_live_secret")
     assert identity.org_id == ORG_A
@@ -69,17 +86,24 @@ def test_api_identity_revoked_pat(mock_get_db):
     from api.auth import get_api_identity
     from fastapi import HTTPException
     
-    mock_db = mock_get_db
-    mock_execute = mock_db.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute
-    
-    # Mock revoked token record
-    mock_execute.return_value.data = {
-        "id": "token-123",
-        "org_id": ORG_A,
-        "clerk_user_id": "user_123",
-        "scopes": ["reconcile", "history"],
-        "revoked_at": datetime.now(timezone.utc).isoformat()
-    }
+    class MockResponse:
+        def __init__(self, data):
+            self.data = data
+            
+    def mock_table(name):
+        from unittest.mock import MagicMock
+        mock_chain = MagicMock()
+        if name == "api_tokens":
+            mock_chain.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value = MockResponse({
+                "id": "token-123",
+                "org_id": ORG_A,
+                "clerk_user_id": "user_123",
+                "scopes": ["reconcile", "history"],
+                "revoked_at": datetime.now(timezone.utc).isoformat()
+            })
+        return mock_chain
+
+    mock_get_db.return_value.table.side_effect = mock_table
     
     with pytest.raises(HTTPException) as exc:
         get_api_identity(authorization="Bearer ra_live_secret")

@@ -9,6 +9,8 @@ router = APIRouter()
 class AuthStatusResponse(BaseModel):
     clerk_user_id: str
     org_id: Optional[str] = None
+    org_role: Optional[str] = None
+    plan: str
     is_pat: bool
     scopes: List[str]
 
@@ -21,6 +23,8 @@ def get_auth_status(user: CurrentIdentity = Depends(get_api_identity)):
     return AuthStatusResponse(
         clerk_user_id=user.clerk_user_id,
         org_id=user.org_id,
+        org_role=user.org_role,
+        plan=user.plan,
         is_pat=user.is_pat,
         scopes=user.scopes,
     )
