@@ -65,8 +65,8 @@ The project was built to demonstrate practical software engineering across **alg
                                │
                     ┌──────────▼──────────┐
                     │ Reconciliation Core │
-                    │ Pandas / NumPy /     │
-                    │ RapidFuzz            │
+                    │ Pandas / NumPy /    │
+                    │ RapidFuzz           │
                     └─────────────────────┘
 ```
 
