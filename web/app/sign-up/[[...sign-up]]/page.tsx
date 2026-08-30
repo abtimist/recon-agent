@@ -36,23 +36,28 @@ export default function Page() {
         <div className="bg-card rounded-xl overflow-hidden p-2">
           <SignUp 
             appearance={{
+              baseTheme: dark,
               variables: {
                 colorPrimary: "#b3ff00",
-                colorBackground: "#050505",
+                colorBackground: "#0a0a0a",
+                colorInputBackground: "#111",
+                colorInputText: "#fff",
               },
               elements: {
-                formButtonPrimary: "text-black font-semibold hover:shadow-[0_0_15px_rgba(179,255,0,0.3)] transition-all",
+                formButtonPrimary: "text-black font-semibold hover:shadow-[0_0_15px_rgba(179,255,0,0.3)] transition-all bg-[#b3ff00]",
                 card: "bg-transparent shadow-none border-none w-full max-w-md",
-                headerTitle: "text-2xl font-bold tracking-tight text-foreground",
-                headerSubtitle: "text-muted-foreground",
-                socialButtonsBlockButton: "border-border bg-muted hover:bg-muted/80 transition-colors",
-                socialButtonsBlockButtonText: "text-foreground font-medium",
-                formFieldInput: "border-border focus:border-accent transition-colors rounded-lg h-11",
-                formFieldLabel: "text-foreground font-medium",
-                dividerLine: "bg-border",
-                dividerText: "text-muted-foreground",
-                footerActionText: "text-muted-foreground",
-                footerActionLink: "text-accent hover:text-accent-hover",
+                headerTitle: "text-2xl font-bold tracking-tight text-white",
+                headerSubtitle: "text-gray-400",
+                socialButtonsBlockButton: "border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white",
+                socialButtonsBlockButtonText: "text-white font-medium",
+                formFieldInput: "border-white/10 bg-[#111] focus:border-[#b3ff00] transition-colors rounded-lg h-11 text-white",
+                formFieldLabel: "text-gray-300 font-medium",
+                dividerLine: "bg-white/10",
+                dividerText: "text-gray-500",
+                footerActionText: "text-gray-400",
+                footerActionLink: "text-[#b3ff00] hover:text-[#99cc00]",
+                identityPreviewText: "text-white",
+                identityPreviewEditButtonIcon: "text-gray-400 hover:text-white"
               }
             }} 
           />
