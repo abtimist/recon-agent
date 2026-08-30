@@ -4,10 +4,22 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/lib/api";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts";
 
 export default function DashboardPage() {
   const { fetchWithAuth } = useApi();
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalRuns: 0,
     avgMatchRate: 0,
@@ -33,6 +45,18 @@ export default function DashboardPage() {
           totalExceptions,
           aiResolutions: 0 // AI matches are not returned in the lightweight /runs response currently
         });
+
+        const formattedChartData = data
+          .filter(run => run.status === "completed")
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .map(run => ({
+            name: new Date(run.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+            matchRate: run.match_rate || 0,
+            exceptions: run.exceptions_count || 0,
+            volume: run.is_batch ? run.total_transactions : run.total_source_rows,
+          }));
+          
+        setChartData(formattedChartData);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -91,8 +115,51 @@ export default function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-8 mt-8 min-h-[300px] flex items-center justify-center">
-           <p className="text-gray-500">More charts and analytics coming soon!</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {/* Match Rate Trend Chart */}
+          <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-white mb-6">Match Rate Trend (%)</h3>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id="colorMatch" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#AAFF00" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#AAFF00" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                  <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
+                    itemStyle={{ color: '#AAFF00' }}
+                  />
+                  <Area type="monotone" dataKey="matchRate" stroke="#AAFF00" strokeWidth={2} fillOpacity={1} fill="url(#colorMatch)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          {/* Exceptions Chart */}
+          <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-white mb-6">Exceptions per Run</h3>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                  <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
+                    itemStyle={{ color: '#ef4444' }}
+                    cursor={{ fill: '#333', opacity: 0.4 }}
+                  />
+                  <Bar dataKey="exceptions" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
     </div>
