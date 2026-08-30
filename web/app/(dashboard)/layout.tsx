@@ -122,7 +122,7 @@ export default function DashboardLayout({
               elements: {
                 userButtonAvatarBox: "w-9 h-9 border border-border",
                 userButtonOuterIdentifier: "text-foreground font-medium",
-                userButtonBox: isCollapsed ? "justify-center" : "flex-row-reverse w-full justify-end",
+                userButtonBox: isCollapsed ? "justify-center" : "flex-row w-full justify-start gap-2",
               }
             }}
           />

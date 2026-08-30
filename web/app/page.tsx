@@ -82,7 +82,7 @@ export default function LandingPage() {
           <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
           <Link href="#security" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Security</Link>
           <Link href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
-          <Link href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
+          <Link href="/developer" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
         </div>
 
         <div className="flex items-center gap-6">
@@ -153,7 +153,7 @@ export default function LandingPage() {
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                   <Link 
-                    href="#" 
+                    href="/developer" 
                     className="px-8 py-4 rounded-full border border-white/20 bg-white/5 backdrop-blur-md text-white font-medium hover:bg-white/10 transition-colors text-lg flex items-center gap-2"
                   >
                     Read the Docs
