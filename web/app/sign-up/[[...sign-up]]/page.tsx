@@ -31,31 +31,35 @@ export default function Page() {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 p-1 rounded-2xl bg-gradient-to-b from-border/50 to-transparent shadow-[0_0_40px_rgba(179,255,0,0.1)]"
+        className="relative z-10 p-[1px] rounded-2xl bg-gradient-to-b from-white/10 to-transparent shadow-2xl"
       >
-        <div className="bg-card rounded-xl overflow-hidden p-2">
+        <div className="bg-[#050505] rounded-xl overflow-hidden p-4 backdrop-blur-xl">
           <SignUp 
             appearance={({
               baseTheme: dark as any,
               variables: {
-                colorPrimary: "#b3ff00",
-                colorBackground: "#0a0a0a",
+                colorPrimary: "#ffffff",
+                colorBackground: "transparent",
+                colorText: "white",
+                colorTextSecondary: "#a1a1aa",
+                colorInputBackground: "#0a0a0a",
+                colorInputText: "white",
               },
               elements: {
-                formButtonPrimary: "!text-black font-semibold hover:shadow-[0_0_15px_rgba(179,255,0,0.3)] transition-all !bg-[#b3ff00]",
+                formButtonPrimary: "!text-black font-semibold !bg-white hover:!bg-gray-200 transition-all rounded-lg h-10 shadow-md",
                 card: "bg-transparent shadow-none border-none w-full max-w-md",
-                headerTitle: "!text-2xl font-bold tracking-tight !text-white",
-                headerSubtitle: "!text-gray-400",
-                socialButtonsBlockButton: "border border-white/10 !bg-white/5 hover:!bg-white/10 transition-colors !text-white",
+                headerTitle: "!text-2xl font-bold tracking-tight !text-white text-center",
+                headerSubtitle: "!text-gray-400 text-center",
+                socialButtonsBlockButton: "border border-white/10 !bg-[#111] hover:!bg-[#1a1a1a] transition-colors !text-white rounded-lg h-11",
                 socialButtonsBlockButtonText: "!text-white font-medium",
-                formFieldInput: "border-white/10 !bg-[#111] focus:!border-[#b3ff00] transition-colors rounded-lg h-11 !text-white",
+                formFieldInput: "border-white/10 !bg-[#0a0a0a] focus:!border-white focus:!ring-1 focus:!ring-white transition-all rounded-lg h-11 !text-white shadow-inner",
                 formFieldLabel: "!text-gray-300 font-medium",
                 dividerLine: "!bg-white/10",
                 dividerText: "!text-gray-500",
                 footerActionText: "!text-gray-400",
-                footerActionLink: "!text-[#b3ff00] hover:!text-[#99cc00]",
+                footerActionLink: "!text-white hover:underline font-medium transition-colors",
                 identityPreviewText: "!text-white",
-                identityPreviewEditButtonIcon: "!text-gray-400 hover:!text-white"
+                identityPreviewEditButtonIcon: "!text-gray-400 hover:!text-white transition-colors"
               }
             } as any)} 
           />
