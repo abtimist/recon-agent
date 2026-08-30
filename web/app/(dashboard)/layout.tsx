@@ -120,8 +120,9 @@ export default function DashboardLayout({
             showName={!isCollapsed}
             appearance={{
               elements: {
-                userButtonAvatarBox: "w-9 h-9 border border-border",
-                userButtonOuterIdentifier: "text-foreground font-medium",
+                userButtonBox: isCollapsed ? "justify-center" : "w-full flex justify-start gap-2",
+                userButtonAvatarBox: "w-9 h-9 border border-border order-1",
+                userButtonOuterIdentifier: "text-foreground font-medium order-2 pl-2",
               }
             }}
           />
