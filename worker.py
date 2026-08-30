@@ -248,6 +248,14 @@ def poll_queue():
 
         except Exception as e:
             print(f"Worker polling error: {e}")
+            try:
+                # If connection is closed or broken, try to reconnect
+                if conn.closed != 0:
+                    print("Database connection closed. Reconnecting...")
+                    conn = psycopg2.connect(DATABASE_URL)
+                    conn.autocommit = True
+            except Exception as reconnect_error:
+                print(f"Reconnection failed: {reconnect_error}")
             time.sleep(5)
 
 if __name__ == "__main__":

@@ -2150,6 +2150,13 @@ dev = [
     { name = "respx" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "respx" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "cryptography", marker = "extra == 'backend'", specifier = ">=42.0" },
@@ -2178,6 +2185,13 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'backend'", specifier = ">=0.29" },
 ]
 provides-extras = ["backend", "dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0" },
+    { name = "respx", specifier = ">=0.23.1" },
+]
 
 [[package]]
 name = "reportlab"

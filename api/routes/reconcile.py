@@ -148,9 +148,10 @@ def reconcile(
             message="Job accepted and queued for processing."
         )
 
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON mapping: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # ---------------------------------------------------------------------------
 # POST /reconcile/batch
@@ -240,5 +241,7 @@ def reconcile_batch(
             status="queued",
             message="Batch jobs accepted and queued for processing."
         )
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON mapping: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

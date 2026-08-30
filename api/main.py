@@ -45,7 +45,7 @@ async def limit_upload_size(request: Request, call_next):
 # ---------------------------------------------------------------------------
 # CORS — allow the Next.js frontend (and local dev) to call the API
 # ---------------------------------------------------------------------------
-cors_origins_str = os.environ.get("CORS_ORIGINS", "http://localhost:3000,https://recon-agent.vercel.app")
+cors_origins_str = os.environ.get("CORS_ORIGINS", "http://localhost:3000,https://recon-agent-alpha.vercel.app")
 allow_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
 
 app.add_middleware(

@@ -88,15 +88,26 @@ def test_explain(monkeypatch):
     monkeypatch.setenv("RECON_API_TOKEN", "ra_live_test_token")
     monkeypatch.setenv("RECON_API_URL", "http://testserver")
 
+    respx.get("http://testserver/runs/run-123").mock(
+        return_value=httpx.Response(200, json={"id": "run-123", "status": "completed"})
+    )
+
     respx.post("http://testserver/explain/").mock(
+        return_value=httpx.Response(200, json={"job_id": "job-123"})
+    )
+    
+    respx.get("http://testserver/explain/job-123/status").mock(
         return_value=httpx.Response(200, json={
-            "headline": "Test Explanation",
-            "status": "OK",
-            "summary": "This is a summary",
-            "key_findings": ["Finding 1"],
-            "financial_impact": "None",
-            "attention_items": [],
-            "recommended_actions": []
+            "status": "completed",
+            "response_data": {
+                "headline": "Test Explanation",
+                "status": "OK",
+                "summary": "This is a summary",
+                "key_findings": ["Finding 1"],
+                "financial_impact": "None",
+                "attention_items": [],
+                "recommended_actions": []
+            }
         })
     )
 

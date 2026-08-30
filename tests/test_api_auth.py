@@ -164,3 +164,40 @@ def test_cross_org_access(mock_get_db):
         
     assert exc.value.status_code == 404
     assert "not found" in exc.value.detail.lower()
+
+
+@patch("api.routes.settings._ensure_org")
+@patch("api.routes.settings.get_db")
+def test_cross_org_modification(mock_get_db, mock_ensure_org):
+    """
+    Ensure that when modifying settings, the org_id is strictly derived from the JWT/PAT
+    and cannot be spoofed to modify another tenant's configuration.
+    """
+    from api.routes.settings import update_ai_config, AIConfigIn
+    from api.auth import CurrentIdentity
+    
+    org_a_identity = CurrentIdentity(
+        clerk_user_id="user_org_a",
+        org_id=ORG_A,
+        is_pat=True,
+        scopes=["reconcile", "history"],
+        org_role="admin"
+    )
+    
+    mock_ensure_org.return_value = ORG_A
+    mock_db = mock_get_db
+    # Mock the existing config fetch
+    mock_db.return_value.table.return_value.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value.data = None
+    
+    # We attempt an update
+    payload = AIConfigIn(provider="openai", api_key="sk-fake")
+    update_ai_config(payload, user=org_a_identity)
+    
+    # Verify that the DB upsert was called with org_id = ORG_A, completely ignoring any
+    # potential spoofing attempts (because the API doesn't even accept org_id in the payload).
+    upsert_call = mock_db.return_value.table.return_value.upsert.call_args
+    assert upsert_call is not None
+    
+    upsert_data = upsert_call[0][0]
+    assert upsert_data["org_id"] == ORG_A
+    assert upsert_data["provider"] == "openai"
