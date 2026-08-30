@@ -43,27 +43,28 @@ export default function DashboardLayout({
           <span className="font-bold tracking-tight">Recon Agent</span>
         </div>
         
-        <div className="p-4 border-b border-border bg-muted/30">
-          <OrganizationSwitcher 
-            hidePersonal
-            appearance={{
-              elements: {
-                organizationSwitcherTrigger: "text-foreground hover:text-foreground transition-colors w-full flex justify-between",
-                organizationPreviewMainIdentifier: "text-foreground font-medium",
-                organizationPreviewAvatarContainer: "border border-border rounded-md",
-              }
-            }}
-          />
+        <div className="p-4 border-b border-border bg-muted/20 flex flex-col gap-3">
+          <div className="w-full">
+            <OrganizationSwitcher 
+              hidePersonal
+              appearance={{
+                elements: {
+                  organizationSwitcherTrigger: "w-full py-1 hover:bg-muted/50 rounded-md transition-colors",
+                  organizationPreviewAvatarContainer: "w-7 h-7",
+                }
+              }}
+            />
+          </div>
           {authStatus && (
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
-                <Crown className="w-3 h-3 text-accent" />
-                <span className="text-xs font-semibold text-accent capitalize">{authStatus.plan}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 shadow-[0_0_10px_rgba(179,255,0,0.1)]">
+                <Crown className="w-3.5 h-3.5 text-accent" />
+                <span className="text-xs font-bold text-accent tracking-wide uppercase">{authStatus.plan}</span>
               </div>
               {authStatus.org_role && (
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20">
-                  <ShieldCheck className="w-3 h-3 text-blue-400" />
-                  <span className="text-xs font-semibold text-blue-400 capitalize">{authStatus.org_role}</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="text-xs font-bold text-blue-400 tracking-wide uppercase">{authStatus.org_role}</span>
                 </div>
               )}
             </div>
