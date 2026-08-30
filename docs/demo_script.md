@@ -9,9 +9,17 @@ This script outlines how to walk a technical interviewer through the Recon Agent
 1. **Upload a 50k Row Dataset:** Navigate to the "New Run" page. Upload a large synthetic dataset (approx 50,000 rows).
 2. **Hit "Run":** The UI immediately transitions to a "Processing..." state.
 3. **Point out the Network Tab:** Open Chrome DevTools. Show the interviewer that the `POST /reconcile` request returned almost instantly (usually ~200ms) with a `status: queued`.
-4. **Explain the Architecture:** Explain that the API inserted a job into the `recon_runs` table and returned. A background `python worker.py` process running separately is actively polling the database using a `SELECT ... FOR UPDATE SKIP LOCKED` query to safely claim and execute the job.
+4. **Explain the Architecture:** Explain that the API inserted a job into the `recon_runs` table, published a task to **Upstash Redis**, and returned. A background `python worker.py` process running separately is actively listening via `BRPOP` to instantly claim and execute the job without database polling latency.
 
-## 2. Demonstrate Engine Performance
+## 2. Demonstrate Business-Centric Dashboard
+
+**Goal:** Prove the platform is designed for enterprise users, not just technical execution.
+
+1. **Navigate to Overview:** Show the 4 main KPI cards (Total Volume, Avg Match Rate, Amount Reconciled, AI Resolutions).
+2. **Explain the Value:** Emphasize that while the engine is highly technical, the interface abstracts this away, prioritizing the actual financial metrics a company cares about.
+3. **Clear History:** Navigate to the History tab and demonstrate the "Clear History" functionality to prove you built bulk-tenant data management capabilities.
+
+## 3. Demonstrate Engine Performance
 
 **Goal:** Prove the $O(n \log m)$ complexity claims.
 

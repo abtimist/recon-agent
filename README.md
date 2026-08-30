@@ -27,12 +27,13 @@ The project was built to demonstrate practical software engineering across **alg
 - **High-volume reconciliation** — Deterministic matching pipeline using exact matching, date-window filtering, NumPy vectorization, and Map-Reduce multiprocessing (`ProcessPoolExecutor`) for CPU scalability.
 - **Asynchronous processing** — Large reconciliation jobs are pushed to an **Upstash Redis** queue and instantly consumed (`BRPOP`) by a detached Dockerized worker, eliminating HTTP timeouts.
 - **Multi-tenant isolation** — PostgreSQL Row-Level Security (RLS) provides database-level tenant isolation, with application-level authorization as defense in depth.
+- **Business-Centric Analytics** — Real-time dashboard aggregating total processed volume, total reconciled amount, AI resolution counts, and match rates across the entire organization.
 - **AI-assisted resolution** — AI is isolated from the deterministic matching core and used for ambiguous cases and financial exception explanations.
 - **Bring Your Own Model (BYOM)** — Supports configurable model providers, including hosted APIs and local Ollama models.
 - **CLI + REST API + Web UI** — Reconciliations can be accessed through the web dashboard, Python CLI, or REST API.
 - **Secure API-key storage** — User-provided model credentials are encrypted using AES-256-GCM before storage.
 - **Reporting** — Generates structured Excel and PDF reconciliation reports.
-- **Failure recovery** — Background workers implement database reconnection and exponential backoff.
+- **Observability** — Integrated with Sentry for real-time error tracking and tracing across FastAPI and the asynchronous worker.
 - **Automated testing** — 63 tests covering core matching behavior, API behavior, authentication, authorization, AI failure cases, and regression scenarios.
 
 ---
@@ -75,7 +76,7 @@ The project was built to demonstrate practical software engineering across **alg
 1. A user uploads source and target transaction files.
 2. The API validates the request and creates a reconciliation job.
 3. The API returns without performing the expensive reconciliation work.
-4. A background worker claims the queued job using PostgreSQL locking.
+4. A background worker instantly claims the queued job via Redis `BRPOP`.
 5. The worker downloads the input files and executes the reconciliation pipeline.
 6. Exact matches are resolved first.
 7. Remaining records are filtered using date and amount constraints.
@@ -436,15 +437,9 @@ The project intentionally documents its current limitations rather than presenti
 
 The expensive fuzzy-matching stage can become the dominant cost when numeric filters produce very large candidate sets.
 
-### Database-Polling Worker
+### Architecture Evolution
 
-The current worker uses PostgreSQL job polling with:
-
-```sql
-FOR UPDATE SKIP LOCKED
-```
-
-This provides safe job claiming across workers, but a dedicated message broker would be more appropriate for substantially larger workloads.
+The project initially used PostgreSQL `FOR UPDATE SKIP LOCKED` for job polling. This was upgraded to **Upstash Redis** to completely eliminate database polling latency and improve real-time responsiveness on the web dashboard.
 
 ### Free-Tier Deployment
 
