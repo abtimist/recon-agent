@@ -31,9 +31,9 @@ export default function Page() {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 p-[1px] rounded-2xl bg-gradient-to-b from-white/10 to-transparent shadow-2xl"
+        className="relative z-10 p-5 rounded-2xl bg-[#050505] border border-white/10 shadow-[0_0_40px_rgba(179,255,0,0.05)] backdrop-blur-xl"
       >
-        <div className="bg-[#050505] rounded-xl overflow-hidden p-4 backdrop-blur-xl">
+        <div className="bg-transparent rounded-xl overflow-hidden">
           <SignUp 
             appearance={({
               baseTheme: dark as any,
@@ -46,13 +46,13 @@ export default function Page() {
                 colorInputText: "white",
               },
               elements: {
-                formButtonPrimary: "!text-black font-semibold !bg-white hover:!bg-gray-200 transition-all rounded-lg h-10 shadow-md",
+                formButtonPrimary: "!text-black font-semibold !bg-white hover:!bg-[#b3ff00] hover:shadow-[0_0_20px_rgba(179,255,0,0.4)] transition-all rounded-lg h-10 shadow-md",
                 card: "bg-transparent shadow-none border-none w-full max-w-md",
                 headerTitle: "!text-2xl font-bold tracking-tight !text-white text-center",
                 headerSubtitle: "!text-gray-400 text-center",
-                socialButtonsBlockButton: "border border-white/10 !bg-[#111] hover:!bg-[#1a1a1a] transition-colors !text-white rounded-lg h-11",
+                socialButtonsBlockButton: "border border-white/20 !bg-[#111] hover:!bg-[#b3ff00]/10 hover:!border-[#b3ff00]/50 transition-all !text-white rounded-lg h-11",
                 socialButtonsBlockButtonText: "!text-white font-medium",
-                formFieldInput: "border-white/10 !bg-[#0a0a0a] focus:!border-white focus:!ring-1 focus:!ring-white transition-all rounded-lg h-11 !text-white placeholder:!text-gray-400 shadow-inner",
+                formFieldInput: "border-white/20 !bg-[#0a0a0a] focus:!border-[#b3ff00] focus:!ring-1 focus:!ring-[#b3ff00] transition-all rounded-lg h-11 !text-white placeholder:!text-gray-400 shadow-inner",
                 formFieldLabel: "!text-gray-300 font-medium",
                 dividerLine: "!bg-white/10",
                 dividerText: "!text-gray-500",
