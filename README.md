@@ -1,7 +1,7 @@
 # Recon Agent
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-recon--agent--alpha.vercel.app-10b981?style=for-the-badge&logo=vercel)](https://recon-agent-alpha.vercel.app)
-[![Tech Stack](https://img.shields.io/badge/Tech-Next.js%20%7C%20FastAPI%20%7C%20Python%20%7C%20PostgreSQL-2563eb?style=for-the-badge)](#-tech-stack)
+[![Tech Stack](https://img.shields.io/badge/Tech-Next.js%20%7C%20FastAPI%20%7C%20Redis%20%7C%20Docker-2563eb?style=for-the-badge)](#-tech-stack)
 [![Tests](https://img.shields.io/badge/Tests-63%20passing-16a34a?style=for-the-badge)](#-testing)
 
 > **Live application:** https://recon-agent-alpha.vercel.app
@@ -24,8 +24,8 @@ The project was built to demonstrate practical software engineering across **alg
 
 ## Key Features
 
-- **High-volume reconciliation** — Deterministic matching pipeline using exact matching, date-window filtering, NumPy vectorization, and RapidFuzz candidate scoring.
-- **Asynchronous processing** — Large reconciliation jobs are queued and processed by a detached worker rather than inside HTTP requests.
+- **High-volume reconciliation** — Deterministic matching pipeline using exact matching, date-window filtering, NumPy vectorization, and Map-Reduce multiprocessing (`ProcessPoolExecutor`) for CPU scalability.
+- **Asynchronous processing** — Large reconciliation jobs are pushed to an **Upstash Redis** queue and instantly consumed (`BRPOP`) by a detached Dockerized worker, eliminating HTTP timeouts.
 - **Multi-tenant isolation** — PostgreSQL Row-Level Security (RLS) provides database-level tenant isolation, with application-level authorization as defense in depth.
 - **AI-assisted resolution** — AI is isolated from the deterministic matching core and used for ambiguous cases and financial exception explanations.
 - **Bring Your Own Model (BYOM)** — Supports configurable model providers, including hosted APIs and local Ollama models.

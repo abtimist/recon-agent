@@ -11,6 +11,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import sentry_sdk
+sentry_dsn = os.environ.get("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+    )
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
@@ -196,58 +204,65 @@ def update_batch_if_done(batch_id: str):
         print(f"Batch {batch_id} marked as completed.")
 
 
+import redis
+from psycopg2.extras import RealDictCursor
+
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.from_url(REDIS_URL)
+
 def poll_queue():
-    print("Worker started. Polling for 'queued' recon_runs and explain_jobs...")
+    print(f"Worker started. Connected to Redis at {REDIS_URL}. Waiting for jobs...")
     conn = psycopg2.connect(DATABASE_URL)
     conn.autocommit = True
 
     while True:
         try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                # 1. Claim one recon job
-                cur.execute("""
-                    UPDATE recon_runs
-                    SET status = 'processing'
-                    WHERE id = (
-                        SELECT id FROM recon_runs
-                        WHERE status = 'queued'
-                        ORDER BY created_at ASC
-                        FOR UPDATE SKIP LOCKED
-                        LIMIT 1
-                    )
-                    RETURNING *;
-                """)
-                run = cur.fetchone()
-
-                if run:
-                    process_reconciliation(run, conn)
-                    update_batch_if_done(run.get("batch_id"))
-                    continue
-
-                # 2. If no recon jobs, claim one explain job
-                cur.execute("""
-                    UPDATE explain_jobs
-                    SET status = 'processing'
-                    WHERE id = (
-                        SELECT id FROM explain_jobs
-                        WHERE status = 'queued'
-                        ORDER BY created_at ASC
-                        FOR UPDATE SKIP LOCKED
-                        LIMIT 1
-                    )
-                    RETURNING *;
-                """)
-                explain_job = cur.fetchone()
+            # Block until a job is available in either queue (timeout 5s to allow graceful shutdown)
+            result = redis_client.brpop(["recon_queue", "explain_queue"], timeout=5)
+            
+            if not result:
+                continue
                 
-                if explain_job:
-                    process_explain_job(explain_job, conn)
-                    continue
-
-                # No jobs at all, sleep and poll again
-                time.sleep(2)
+            queue_name, job_id_bytes = result
+            queue_name = queue_name.decode("utf-8")
+            job_id = job_id_bytes.decode("utf-8")
+            
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                if queue_name == "recon_queue":
+                    # Mark processing and fetch job
+                    cur.execute("""
+                        UPDATE recon_runs
+                        SET status = 'processing'
+                        WHERE id = %s AND status = 'queued'
+                        RETURNING *;
+                    """, (job_id,))
+                    run = cur.fetchone()
+                    
+                    if run:
+                        process_reconciliation(run, conn)
+                        update_batch_if_done(run.get("batch_id"))
+                    else:
+                        print(f"Recon job {job_id} not found or already processing.")
+                        
+                elif queue_name == "explain_queue":
+                    # Mark processing and fetch job
+                    cur.execute("""
+                        UPDATE explain_jobs
+                        SET status = 'processing'
+                        WHERE id = %s AND status = 'queued'
+                        RETURNING *;
+                    """, (job_id,))
+                    explain_job = cur.fetchone()
+                    
+                    if explain_job:
+                        process_explain_job(explain_job, conn)
+                    else:
+                        print(f"Explain job {job_id} not found or already processing.")
 
         except Exception as e:
-            print(f"Worker polling error: {e}")
+            print(f"Worker processing error: {e}")
+            import traceback
+            traceback.print_exc()
             try:
                 # If connection is closed or broken, try to reconnect
                 if conn.closed != 0:
@@ -260,3 +275,4 @@ def poll_queue():
 
 if __name__ == "__main__":
     poll_queue()
+

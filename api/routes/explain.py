@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Any
 
 from api.auth import CurrentIdentity, get_api_identity, RequiresScope, RequiresTier
-from api.db import get_db
+from api.db import get_db, get_redis
 from api.routes.reconcile import _ensure_org
 
 router = APIRouter()
@@ -56,6 +56,10 @@ def explain_result(
             "status": "queued",
             "request_data": request.model_dump()["result"]
         }).execute()
+        
+        # Push to Redis queue
+        redis = get_redis()
+        redis.lpush("explain_queue", job_id)
 
         return ExplainJobAccepted(
             job_id=job_id,

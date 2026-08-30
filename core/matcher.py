@@ -102,6 +102,52 @@ def exact_match(
 # Stage 2 – Fuzzy match (optimised)
 # ---------------------------------------------------------------------------
 
+import concurrent.futures
+
+def _score_source_row(args):
+    """Helper for parallel processing of source rows."""
+    src_row, tgt_date_arr, tgt_amount_arr, tgt_party_arr, amount_tolerance, date_window_days, use_party_scoring = args
+    
+    src_date = pd.to_datetime(src_row["date"], errors="coerce")
+    if pd.isna(src_date):
+        return (src_row, None, 0, None)
+        
+    src_ord    = src_date.toordinal()
+    src_amount = float(src_row["amount"])
+    src_party  = str(src_row["party"]).lower() if use_party_scoring else ""
+
+    lo = int(np.searchsorted(tgt_date_arr, src_ord - date_window_days, side="left"))
+    hi = int(np.searchsorted(tgt_date_arr, src_ord + date_window_days, side="right"))
+
+    if lo >= hi:
+        return (src_row, None, 0, None)
+
+    candidate_positions = list(range(lo, hi))
+    cand_pos_arr    = np.array(candidate_positions, dtype=np.int64)
+    cand_amounts    = tgt_amount_arr[cand_pos_arr]
+    amount_mask     = np.abs(cand_amounts - src_amount) <= amount_tolerance
+    filtered_pos    = cand_pos_arr[amount_mask].tolist()
+
+    if not filtered_pos:
+        return (src_row, None, 0, None)
+
+    if use_party_scoring:
+        choices = {pos: tgt_party_arr[pos] for pos in filtered_pos}
+        result  = rf_process.extractOne(
+            src_party, choices,
+            scorer=fuzz.ratio,
+            score_cutoff=60,
+        )
+        if result is None:
+            return (src_row, None, 0, None)
+        _best_name, best_score, best_pos = result
+    else:
+        best_pos   = min(filtered_pos, key=lambda p: abs(tgt_amount_arr[p] - src_amount))
+        best_score = 90
+
+    return (src_row, best_pos, best_score, "fuzzy_high_confidence" if best_score >= 85 else "ambiguous")
+
+
 def fuzzy_match(
     unmatched_source: pd.DataFrame,
     unmatched_target: pd.DataFrame,
@@ -112,132 +158,158 @@ def fuzzy_match(
     Attempt to match remaining rows using amount proximity, date proximity,
     and (if available) party name similarity.
 
-    Returns (matched_df, still_unmatched_source, still_unmatched_target, ambiguous_pairs).
-
-    The optimised approach:
-      • Sorts target by date ordinal → enables binary search.
-      • Uses numpy searchsorted for O(log m) date-window candidate selection.
-      • Uses numpy vectorised abs-diff for O(k) amount filtering.
-      • Only calls rapidfuzz on the tiny surviving candidate set.
+    The optimised approach uses a Map-Reduce pattern:
+      1. Map: ProcessPoolExecutor distributes source rows across CPU cores.
+              Each core uses numpy binary search to find candidates and rapidfuzz to score them.
+      2. Reduce: Sort all discovered matches by confidence descending, and greedily
+                 claim target rows to prevent double-spending.
     """
     if unmatched_source.empty or unmatched_target.empty:
-        return (
-            pd.DataFrame(),
-            unmatched_source,
-            unmatched_target,
-            [],
-        )
+        return (pd.DataFrame(), unmatched_source, unmatched_target, [])
 
     source_has_party = _has_party(unmatched_source)
     target_has_party = _has_party(unmatched_target)
     use_party_scoring = source_has_party and target_has_party
 
-    # -----------------------------------------------------------------------
-    # Pre-process target: sort by date, build numpy arrays for fast lookup
-    # -----------------------------------------------------------------------
     tgt = unmatched_target.copy()
     tgt["date"] = pd.to_datetime(tgt["date"], errors="coerce")
-    tgt["_date_ord"] = tgt["date"].apply(
-        lambda d: d.toordinal() if pd.notna(d) else 0
-    )
+    tgt["_date_ord"] = tgt["date"].apply(lambda d: d.toordinal() if pd.notna(d) else 0)
     tgt = tgt.sort_values("_date_ord").reset_index(drop=True)
 
-    # numpy arrays — indexed positionally into tgt (0 … len-1)
     tgt_date_arr   = tgt["_date_ord"].to_numpy(dtype=np.int64)
     tgt_amount_arr = tgt["amount"].to_numpy(dtype=np.float64)
-    if use_party_scoring:
-        tgt_party_arr = tgt["party"].str.lower().tolist()
-    else:
-        tgt_party_arr = None
+    tgt_party_arr  = tgt["party"].str.lower().tolist() if use_party_scoring else None
 
-    matched_rows      = []
-    ambiguous_pairs   = []
-    used_positions    = set()   # positional indices in the sorted tgt array
-    remaining_source  = []
+    if len(unmatched_source) <= 1000:
+        # Strict sequential loop for small datasets (guarantees parity with naive approach)
+        matched_rows      = []
+        ambiguous_pairs   = []
+        used_positions    = set()
+        remaining_source  = []
 
-    # -----------------------------------------------------------------------
-    # Main loop — one source row at a time
-    # -----------------------------------------------------------------------
-    for _, src_row in unmatched_source.iterrows():
-        src_date = pd.to_datetime(src_row["date"], errors="coerce")
-        if pd.isna(src_date):
-            remaining_source.append(src_row)
-            continue
-
-        src_ord    = src_date.toordinal()
-        src_amount = float(src_row["amount"])
-        src_party  = str(src_row["party"]).lower() if use_party_scoring else ""
-
-        # --- Stage 1: date-window slice via binary search ------------------
-        lo = int(np.searchsorted(tgt_date_arr, src_ord - date_window_days, side="left"))
-        hi = int(np.searchsorted(tgt_date_arr, src_ord + date_window_days, side="right"))
-
-        if lo >= hi:
-            remaining_source.append(src_row)
-            continue
-
-        candidate_positions = [i for i in range(lo, hi) if i not in used_positions]
-        if not candidate_positions:
-            remaining_source.append(src_row)
-            continue
-
-        # --- Stage 2: amount filter (vectorised) ---------------------------
-        cand_pos_arr    = np.array(candidate_positions, dtype=np.int64)
-        cand_amounts    = tgt_amount_arr[cand_pos_arr]
-        amount_mask     = np.abs(cand_amounts - src_amount) <= amount_tolerance
-        filtered_pos    = cand_pos_arr[amount_mask].tolist()
-
-        if not filtered_pos:
-            remaining_source.append(src_row)
-            continue
-
-        # --- Stage 3: party name fuzzy match (only on surviving candidates) --
-        if use_party_scoring:
-            choices = {pos: tgt_party_arr[pos] for pos in filtered_pos}
-            result  = rf_process.extractOne(
-                src_party, choices,
-                scorer=fuzz.ratio,
-                score_cutoff=60,
-            )
-            if result is None:
+        for _, src_row in unmatched_source.iterrows():
+            src_date = pd.to_datetime(src_row["date"], errors="coerce")
+            if pd.isna(src_date):
                 remaining_source.append(src_row)
                 continue
-            _best_name, best_score, best_pos = result
-        else:
-            # No party data — amount+date agreement is enough.
-            # Pick the closest amount among filtered candidates.
-            best_pos   = min(filtered_pos,
-                             key=lambda p: abs(tgt_amount_arr[p] - src_amount))
-            best_score = 90   # treat as high-confidence when no party to compare
+                
+            src_ord    = src_date.toordinal()
+            src_amount = float(src_row["amount"])
+            src_party  = str(src_row["party"]).lower() if use_party_scoring else ""
+            
+            lo = int(np.searchsorted(tgt_date_arr, src_ord - date_window_days, side="left"))
+            hi = int(np.searchsorted(tgt_date_arr, src_ord + date_window_days, side="right"))
+            
+            if lo >= hi:
+                remaining_source.append(src_row)
+                continue
+                
+            candidate_positions = [i for i in range(lo, hi) if i not in used_positions]
+            if not candidate_positions:
+                remaining_source.append(src_row)
+                continue
+                
+            cand_pos_arr    = np.array(candidate_positions, dtype=np.int64)
+            cand_amounts    = tgt_amount_arr[cand_pos_arr]
+            amount_mask     = np.abs(cand_amounts - src_amount) <= amount_tolerance
+            filtered_pos    = cand_pos_arr[amount_mask].tolist()
+            
+            if not filtered_pos:
+                remaining_source.append(src_row)
+                continue
+                
+            if use_party_scoring:
+                choices = {pos: tgt_party_arr[pos] for pos in filtered_pos}
+                result  = rf_process.extractOne(
+                    src_party, choices,
+                    scorer=fuzz.ratio,
+                    score_cutoff=60,
+                )
+                if result is None:
+                    remaining_source.append(src_row)
+                    continue
+                _best_name, best_score, best_pos = result
+            else:
+                best_pos   = min(filtered_pos, key=lambda p: abs(tgt_amount_arr[p] - src_amount))
+                best_score = 90
+                
+            tgt_row = tgt.iloc[best_pos]
+            record = {
+                "id_source":     src_row["id"],
+                "party_source":  src_row["party"],
+                "amount_source": src_row["amount"],
+                "date_source":   src_row["date"],
+                "id_target":     tgt_row["id"],
+                "party_target":  tgt_row["party"],
+                "amount_target": tgt_row["amount"],
+                "date_target":   tgt_row["date"],
+            }
+            if best_score >= 85:
+                matched_rows.append({
+                    **record,
+                    "match_type": "fuzzy_high_confidence",
+                    "confidence": round(best_score / 100, 2),
+                })
+                used_positions.add(best_pos)
+            else:
+                ambiguous_pairs.append((src_row.to_dict(), tgt_row.to_dict()))
+                used_positions.add(best_pos)
+                
+    else:
+        # Map-Reduce approach for large datasets (>1000 rows) using ProcessPoolExecutor
+        tasks = []
+        for _, src_row in unmatched_source.iterrows():
+            tasks.append((src_row, tgt_date_arr, tgt_amount_arr, tgt_party_arr, amount_tolerance, date_window_days, use_party_scoring))
 
-        tgt_row = tgt.iloc[best_pos]
+        import os
+        max_workers = min(8, (os.cpu_count() or 1) + 4)
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+            results = list(executor.map(_score_source_row, tasks, chunksize=100))
 
-        record = {
-            "id_source":     src_row["id"],
-            "party_source":  src_row["party"],
-            "amount_source": src_row["amount"],
-            "date_source":   src_row["date"],
-            "id_target":     tgt_row["id"],
-            "party_target":  tgt_row["party"],
-            "amount_target": tgt_row["amount"],
-            "date_target":   tgt_row["date"],
-        }
+        candidates = []
+        failed_src_rows = []
+        for res in results:
+            src_row, best_pos, best_score, match_type = res
+            if best_pos is not None:
+                candidates.append(res)
+            else:
+                failed_src_rows.append(src_row)
+                
+        candidates.sort(key=lambda x: x[2], reverse=True)
 
-        if best_score >= 85:
-            matched_rows.append({
-                **record,
-                "match_type": "fuzzy_high_confidence",
-                "confidence": round(best_score / 100, 2),
-            })
+        matched_rows      = []
+        ambiguous_pairs   = []
+        used_positions    = set()
+        remaining_source  = failed_src_rows
+
+        for src_row, best_pos, best_score, match_type in candidates:
+            if best_pos in used_positions:
+                remaining_source.append(src_row)
+                continue
+                
             used_positions.add(best_pos)
-        else:
-            # 60–84: plausible but uncertain → send to AI
-            ambiguous_pairs.append((src_row.to_dict(), tgt_row.to_dict()))
-            used_positions.add(best_pos)
+            tgt_row = tgt.iloc[best_pos]
 
-    # -----------------------------------------------------------------------
-    # Build outputs
-    # -----------------------------------------------------------------------
+            record = {
+                "id_source":     src_row["id"],
+                "party_source":  src_row["party"],
+                "amount_source": src_row["amount"],
+                "date_source":   src_row["date"],
+                "id_target":     tgt_row["id"],
+                "party_target":  tgt_row["party"],
+                "amount_target": tgt_row["amount"],
+                "date_target":   tgt_row["date"],
+            }
+
+            if match_type == "fuzzy_high_confidence":
+                matched_rows.append({
+                    **record,
+                    "match_type": "fuzzy_high_confidence",
+                    "confidence": round(best_score / 100, 2),
+                })
+            else:
+                ambiguous_pairs.append((src_row.to_dict(), tgt_row.to_dict()))
+
     matched_df = pd.DataFrame(matched_rows)
 
     still_unmatched_source = (

@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from pydantic import BaseModel
 
 from api.auth import CurrentIdentity, get_api_identity, RequiresScope
-from api.db import get_db
+from api.db import get_db, get_redis
 from api.quota import check_and_increment_quota
 
 router = APIRouter()
@@ -141,6 +141,10 @@ def reconcile(
             "target_file_url": tgt_path,
             "config":          config,
         }).execute()
+        
+        # Push to Redis queue
+        redis = get_redis()
+        redis.lpush("recon_queue", run_id)
 
         return JobAccepted(
             run_id=run_id,
@@ -234,6 +238,11 @@ def reconcile_batch(
                 "target_file_url": tgt_path,
                 "config":          config,
             }).execute()
+            
+        # Push to Redis queue
+        redis = get_redis()
+        for run_id in run_ids:
+            redis.lpush("recon_queue", run_id)
             
         return BatchJobAccepted(
             batch_id=batch_id,

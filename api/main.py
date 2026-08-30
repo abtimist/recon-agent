@@ -11,6 +11,7 @@ Environment variables required (copy .env.example → .env):
     ENCRYPTION_KEY          (32 random bytes, base64-encoded)
 """
 
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -18,6 +19,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import reconcile, history, mappings, settings, explain, reports, tokens, auth
+
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+
+sentry_dsn = os.environ.get("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+        _experiments={
+            "continuous_profiling_auto_start": True,
+        },
+    )
 
 app = FastAPI(
     title="Recon Agent API",
@@ -70,5 +84,5 @@ app.include_router(tokens.router,    prefix="/api-tokens",tags=["tokens"])
 
 
 @app.get("/health")
-def health() -> dict:
-    return {"status": "ok"}
+async def health_check():
+    return {"status": "ok", "version": "1.0.0"}

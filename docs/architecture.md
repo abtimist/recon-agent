@@ -15,15 +15,22 @@ Recon Agent uses a highly decoupled, asynchronously driven architecture built on
    - Uses row-level multi-tenant isolation via Clerk JWTs and API Tokens (`api/auth.py`).
    - DOES NOT perform reconciliation itself to avoid blocking HTTP requests or hitting reverse proxy timeouts.
 
-3. **Background Worker**
-   - Runs as a detached `python worker.py` process.
-   - Polls the `recon_runs` table using a pessimistic lock (`SELECT ... FOR UPDATE SKIP LOCKED`) to ensure exactly-once processing even if multiple workers are deployed.
+3. **Background Worker (Dockerized)**
+   - Runs as a detached container executing `worker.py`.
+   - Uses `BRPOP` (blocking right pop) to instantly consume jobs off an Upstash Redis message queue, completely eliminating database polling overhead and minimizing latency.
    - Downloads files from Supabase Storage, executes the reconciliation pipeline (`core/matcher.py`), generates the result payload, and commits it back to the database.
-   - Resilient against intermittent database disconnects via exponential backoff and reconnection logic.
 
-4. **Database (Supabase PostgreSQL)**
+4. **Message Broker (Redis)**
+   - Uses Upstash Redis to decouple API endpoints from the worker processing queue.
+   - Provides lightning-fast in-memory job buffering.
+
+5. **Database (Supabase PostgreSQL)**
    - Serves as the source of truth for authentication rules, jobs, and results.
    - Implements Row-Level Security (RLS) to enforce tenant isolation at the database layer.
+
+## Observability
+
+- **Sentry**: Integrated at both the FastAPI and worker layers for comprehensive error tracking. Tracing is enabled with a 100% sample rate, automatically profiling worker execution time to identify computational bottlenecks.
 
 ## Reconciliation Engine
 
