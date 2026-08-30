@@ -36,12 +36,9 @@ export default function Page() {
         <div className="bg-card rounded-xl overflow-hidden p-2">
           <SignIn 
             appearance={{
-              baseTheme: dark,
               variables: {
                 colorPrimary: "#b3ff00",
                 colorBackground: "#0a0a0a",
-                colorInputBackground: "#111",
-                colorInputText: "#fff",
               },
               elements: {
                 formButtonPrimary: "text-black font-semibold hover:shadow-[0_0_15px_rgba(179,255,0,0.3)] transition-all bg-[#b3ff00]",
