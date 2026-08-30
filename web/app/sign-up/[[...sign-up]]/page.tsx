@@ -52,6 +52,7 @@ export default function Page() {
                 headerSubtitle: "!text-gray-400 text-center",
                 socialButtonsBlockButton: "border border-white/20 !bg-[#111] hover:!bg-[#b3ff00]/10 hover:!border-[#b3ff00]/50 transition-all !text-white rounded-lg h-11",
                 socialButtonsBlockButtonText: "!text-white font-medium",
+                socialButtonsIconButton: "border border-white/20 !bg-[#111] hover:!bg-[#b3ff00]/10 hover:!border-[#b3ff00]/50 transition-all !text-white rounded-lg",
                 socialButtonsProviderIcon__apple: "!invert !brightness-200",
                 formFieldInput: "border-white/20 !bg-[#0a0a0a] focus:!border-[#b3ff00] focus:!ring-1 focus:!ring-[#b3ff00] transition-all rounded-lg h-11 !text-white placeholder:!text-gray-400 shadow-inner",
                 formFieldLabel: "!text-gray-300 font-medium",
