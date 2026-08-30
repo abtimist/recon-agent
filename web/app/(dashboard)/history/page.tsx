@@ -31,7 +31,7 @@ export default function HistoryPage() {
 
   const fetchRuns = () => {
     setLoading(true);
-    fetchWithAuth("/runs/")
+    fetchWithAuth("/runs/?limit=100")
       .then((data) => setRuns(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

@@ -170,6 +170,47 @@ def clear_history(
 
     return {"status": "ok", "message": "History cleared"}
 
+@router.get("/stats")
+def get_dashboard_stats(
+    user: CurrentIdentity = Depends(RequiresScope("history")),
+):
+    """Aggregated stats for the dashboard."""
+    db     = get_db()
+    org_id = _ensure_org(db, user)
+
+    # Fetch all runs for aggregation (for MVP we fetch all, can optimize later)
+    res = (
+        db.table("recon_runs")
+        .select("status, match_rate, exceptions_count, ai_matches, summary")
+        .eq("org_id", org_id)
+        .is_("batch_id", "null")
+        .execute()
+    )
+    runs = res.data or []
+
+    total_runs = len(runs)
+    total_exceptions = sum(r.get("exceptions_count") or 0 for r in runs)
+    total_ai_resolutions = sum(r.get("ai_matches") or 0 for r in runs)
+    
+    valid_rates = [r.get("match_rate") for r in runs if r.get("match_rate") is not None]
+    avg_match_rate = sum(valid_rates) / len(valid_rates) if valid_rates else 0.0
+
+    total_amount = 0.0
+    matched_amount = 0.0
+    for r in runs:
+        summary = r.get("summary") or {}
+        total_amount += float(summary.get("total_amount") or 0)
+        matched_amount += float(summary.get("matched_amount") or 0)
+
+    return {
+        "totalRuns": total_runs,
+        "avgMatchRate": avg_match_rate,
+        "totalExceptions": total_exceptions,
+        "aiResolutions": total_ai_resolutions,
+        "totalAmount": total_amount,
+        "matchedAmount": matched_amount
+    }
+
 @router.get("/batch/{batch_id}/status")
 def get_batch_status(
     batch_id: str,

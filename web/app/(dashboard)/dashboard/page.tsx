@@ -40,29 +40,33 @@ export default function DashboardPage() {
     totalRuns: 0,
     avgMatchRate: 0,
     totalExceptions: 0,
-    aiResolutions: 0
+    aiResolutions: 0,
+    totalAmount: 0,
+    matchedAmount: 0
   });
 
-  useEffect(() => {
-    fetchWithAuth("/runs/")
-      .then((data: any[]) => {
-        if (!data || data.length === 0) return;
-        
-        const totalRuns = data.length;
-        const totalExceptions = data.reduce((acc, run) => acc + (run.exceptions_count || 0), 0);
-        const validMatchRates = data.filter(run => run.match_rate !== null).map(run => run.match_rate);
-        const avgMatchRate = validMatchRates.length > 0 
-          ? validMatchRates.reduce((acc, rate) => acc + rate, 0) / validMatchRates.length 
-          : 0;
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+  };
 
+  useEffect(() => {
+    Promise.all([
+      fetchWithAuth("/runs/?limit=100"), // Get more runs for the chart
+      fetchWithAuth("/runs/stats")
+    ])
+      .then(([runsData, statsData]: [any[], any]) => {
+        if (!runsData || runsData.length === 0) return;
+        
         setStats({
-          totalRuns,
-          avgMatchRate: avgMatchRate,
-          totalExceptions,
-          aiResolutions: 0 // AI matches are not returned in the lightweight /runs response currently
+          totalRuns: statsData.totalRuns || 0,
+          avgMatchRate: statsData.avgMatchRate || 0,
+          totalExceptions: statsData.totalExceptions || 0,
+          aiResolutions: statsData.aiResolutions || 0,
+          totalAmount: statsData.totalAmount || 0,
+          matchedAmount: statsData.matchedAmount || 0
         });
 
-        const formattedChartData = data
+        const formattedChartData = runsData
           .filter(run => run.status === "completed")
           .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
           .map(run => {
@@ -87,14 +91,14 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-white">Overview</h1>
         <p className="text-gray-400">
-          Monitor your reconciliation match rates and pending exceptions.
+          Monitor your reconciliation metrics, exceptions, and business volume.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 shadow-sm">
-          <div className="text-sm font-medium text-gray-400">Total Runs (30d)</div>
-          <div className="mt-2 text-3xl font-bold text-white">{loading ? "-" : stats.totalRuns}</div>
+          <div className="text-sm font-medium text-gray-400">Total Volume ($)</div>
+          <div className="mt-2 text-3xl font-bold text-white">{loading ? "-" : formatCurrency(stats.totalAmount)}</div>
         </div>
         <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 shadow-sm">
           <div className="text-sm font-medium text-gray-400">Avg Match Rate</div>
@@ -103,8 +107,8 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 shadow-sm">
-          <div className="text-sm font-medium text-gray-400">Total Exceptions</div>
-          <div className="mt-2 text-3xl font-bold text-red-500">{loading ? "-" : stats.totalExceptions}</div>
+          <div className="text-sm font-medium text-gray-400">Amount Reconciled ($)</div>
+          <div className="mt-2 text-3xl font-bold text-[#AAFF00]">{loading ? "-" : formatCurrency(stats.matchedAmount)}</div>
         </div>
         <div className="rounded-xl border border-white/10 bg-[#0f0f0f] p-6 shadow-sm">
           <div className="text-sm font-medium text-gray-400">AI Resolutions</div>
