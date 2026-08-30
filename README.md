@@ -1,5 +1,10 @@
 # Recon Agent 
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-recon--agent--alpha.vercel.app-10b981?style=for-the-badge&logo=vercel)](https://recon-agent-alpha.vercel.app)
+[![Tech Stack](https://img.shields.io/badge/Tech-Next.js%20%7C%20FastAPI%20%7C%20Python%20%7C%20Supabase-2563eb?style=for-the-badge)](#%EF%B8%8F-tech-stack)
+
+> **🌍 Access the Live Application:** [https://recon-agent-alpha.vercel.app](https://recon-agent-alpha.vercel.app)
+
 An AI-powered financial reconciliation platform built as a multi-tenant SaaS. Recon Agent automates the tedious process of matching source and target financial records using deterministic matching algorithms and advanced AI for resolving complex exceptions.
 
 This project was built to demonstrate modern full-stack development, system architecture, API design, and applied AI in a FinOps context.

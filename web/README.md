@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Recon Agent - Web Frontend
 
-## Getting Started
+This directory contains the **Next.js 16** frontend for the Recon Agent platform. It provides a sleek, modern dashboard for users to upload files, map columns, run AI reconciliation, view history, and export reports.
 
-First, run the development server:
+## Tech Stack
+- **Framework:** Next.js 16 (App Router)
+- **Styling:** Tailwind CSS, Framer Motion (for animations)
+- **Components:** Shadcn UI (accessible UI components)
+- **Authentication:** Clerk (Multi-tenant B2B Organizations)
+- **Charts:** Recharts (for analytics dashboards)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Development Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. Environment Variables:
+   Ensure you have a `.env.local` file with your Clerk Publishable Key:
+   ```env
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+   The application will be available at [http://localhost:3000](http://localhost:3000).
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture Highlights
+- **Server vs Client Components:** We strictly adhere to the App Router paradigms, utilizing Client Components (`"use client"`) only when interactivity (hooks, state) is needed, optimizing for SSR wherever possible.
+- **API Interception:** All calls to the FastAPI backend use our custom `useApi` hook that dynamically injects the Clerk user's authentication JWT to ensure absolute security and tenant isolation.
