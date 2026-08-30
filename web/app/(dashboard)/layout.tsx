@@ -66,12 +66,12 @@ export default function DashboardLayout({
             <OrganizationSwitcher 
               hidePersonal
               appearance={{
-                variables: { colorText: "white" },
                 elements: {
                   organizationSwitcherTrigger: `w-full py-1 hover:bg-muted/50 rounded-md transition-colors ${isCollapsed ? 'px-0 justify-center' : ''}`,
                   organizationPreviewAvatarContainer: "w-6 h-6",
-                  organizationPreviewMainIdentifier: isCollapsed ? "hidden" : "text-white font-medium",
-                  organizationSwitcherTriggerIcon: isCollapsed ? "hidden" : "text-white",
+                  organizationPreviewMainIdentifier: isCollapsed ? "hidden" : "!text-white font-medium",
+                  organizationPreviewSecondaryIdentifier: "!text-gray-300",
+                  organizationSwitcherTriggerIcon: isCollapsed ? "hidden" : "!text-white",
                 }
               }}
             />
@@ -120,11 +120,10 @@ export default function DashboardLayout({
           <UserButton 
             showName={!isCollapsed}
             appearance={{
-              variables: { colorText: "white" },
               elements: {
                 userButtonBox: isCollapsed ? "justify-center" : "w-full flex justify-start gap-2",
                 userButtonAvatarBox: "w-8 h-8 border border-border order-1",
-                userButtonOuterIdentifier: "text-white font-medium order-2 pl-2",
+                userButtonOuterIdentifier: "!text-white font-medium order-2 pl-2",
               }
             }}
           />
