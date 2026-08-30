@@ -52,7 +52,7 @@ export default function Page() {
                 headerSubtitle: "!text-gray-400 text-center",
                 socialButtonsBlockButton: "border border-white/10 !bg-[#111] hover:!bg-[#1a1a1a] transition-colors !text-white rounded-lg h-11",
                 socialButtonsBlockButtonText: "!text-white font-medium",
-                formFieldInput: "border-white/10 !bg-[#0a0a0a] focus:!border-white focus:!ring-1 focus:!ring-white transition-all rounded-lg h-11 !text-white shadow-inner",
+                formFieldInput: "border-white/10 !bg-[#0a0a0a] focus:!border-white focus:!ring-1 focus:!ring-white transition-all rounded-lg h-11 !text-white placeholder:!text-gray-400 shadow-inner",
                 formFieldLabel: "!text-gray-300 font-medium",
                 dividerLine: "!bg-white/10",
                 dividerText: "!text-gray-500",

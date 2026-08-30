@@ -129,3 +129,13 @@
 @utility glass {
   @apply bg-black/40 backdrop-blur-xl border border-white/10;
 }
+
+/* Clerk UI Overrides */
+.cl-socialButtonsProviderIcon__apple {
+  filter: invert(1) brightness(1.5) !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: #a1a1aa !important;
+  opacity: 1;
+}
