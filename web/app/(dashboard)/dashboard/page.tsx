@@ -16,6 +16,22 @@ import {
   Bar,
 } from "recharts";
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-[#1a1a1a] border border-[#333] p-3 rounded-lg shadow-xl">
+        <p className="text-gray-400 text-xs mb-2">{data.name}</p>
+        <p className="text-white text-sm font-medium">Run ID: {data.runId}</p>
+        <p className="text-[#AAFF00] text-sm font-medium mt-1">Match Rate: {data.matchRate}%</p>
+        <p className="text-red-400 text-sm font-medium">Exceptions: {data.exceptions}</p>
+        <p className="text-gray-300 text-sm font-medium">Volume: {data.volume} rows</p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function DashboardPage() {
   const { fetchWithAuth } = useApi();
   const [loading, setLoading] = useState(true);
@@ -49,12 +65,16 @@ export default function DashboardPage() {
         const formattedChartData = data
           .filter(run => run.status === "completed")
           .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          .map(run => ({
-            name: new Date(run.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-            matchRate: run.match_rate || 0,
-            exceptions: run.exceptions_count || 0,
-            volume: run.is_batch ? run.total_transactions : run.total_source_rows,
-          }));
+          .map(run => {
+            const d = new Date(run.created_at);
+            return {
+              name: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + " " + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+              matchRate: typeof run.match_rate === 'number' ? Number(run.match_rate.toFixed(2)) : 0,
+              exceptions: run.exceptions_count || 0,
+              volume: run.is_batch ? run.total_transactions : run.total_source_rows,
+              runId: run.id.substring(0, 8),
+            };
+          });
           
         setChartData(formattedChartData);
       })
@@ -131,10 +151,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 100]} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
-                    itemStyle={{ color: '#AAFF00' }}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#333', opacity: 0.4 }} />
                   <Area type="monotone" dataKey="matchRate" stroke="#AAFF00" strokeWidth={2} fillOpacity={1} fill="url(#colorMatch)" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -150,11 +167,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '8px' }}
-                    itemStyle={{ color: '#ef4444' }}
-                    cursor={{ fill: '#333', opacity: 0.4 }}
-                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#333', opacity: 0.4 }} />
                   <Bar dataKey="exceptions" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

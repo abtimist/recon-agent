@@ -63,14 +63,34 @@ export default function HistoryPage() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight text-white">History</h1>
-          <button 
-            onClick={fetchRuns} 
-            disabled={loading} 
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors border border-white/10 text-sm font-medium disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Sync
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to delete all history? This cannot be undone.")) {
+                  setLoading(true);
+                  try {
+                    await fetchWithAuth("/runs/", { method: "DELETE" });
+                    fetchRuns();
+                  } catch (err: any) {
+                    setError(err.message);
+                    setLoading(false);
+                  }
+                }
+              }} 
+              disabled={loading} 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors border border-red-500/20 text-sm font-medium disabled:opacity-50"
+            >
+              Clear History
+            </button>
+            <button 
+              onClick={fetchRuns} 
+              disabled={loading} 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors border border-white/10 text-sm font-medium disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Sync
+            </button>
+          </div>
         </div>
         <p className="text-gray-400">
           View past reconciliation runs and download exception reports.

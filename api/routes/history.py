@@ -157,6 +157,18 @@ def list_runs(
     
     return combined[offset:offset+limit]
 
+@router.delete("/")
+def clear_history(
+    user: CurrentIdentity = Depends(RequiresScope("history")),
+):
+    """Clear all reconciliation history for the user's organization."""
+    db     = get_db()
+    org_id = _ensure_org(db, user)
+
+    db.table("recon_runs").delete().eq("org_id", org_id).execute()
+    db.table("recon_batches").delete().eq("org_id", org_id).execute()
+
+    return {"status": "ok", "message": "History cleared"}
 
 @router.get("/batch/{batch_id}/status")
 def get_batch_status(
