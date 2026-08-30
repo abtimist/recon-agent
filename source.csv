@@ -1,8 +1,0 @@
-transaction_id,amount,date,description
-txn_001,100.5,2026-08-28,Stripe Payout
-txn_002,50.0,2026-08-28,Stripe Payout
-txn_003,75.25,2026-08-29,PayPal Transfer
-txn_004,20.0,2026-08-29,Refund
-txn_001,100.5,2026-08-28,Stripe Payout
-txn_002,50.0,2026-08-28,Stripe Payout
-txn_003,75.25,2026-08-29,PayPal Transfer
