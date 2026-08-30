@@ -66,25 +66,26 @@ export default function DashboardLayout({
             <OrganizationSwitcher 
               hidePersonal
               appearance={{
+                variables: { colorText: "white" },
                 elements: {
                   organizationSwitcherTrigger: `w-full py-1 hover:bg-muted/50 rounded-md transition-colors ${isCollapsed ? 'px-0 justify-center' : ''}`,
-                  organizationPreviewAvatarContainer: "w-7 h-7",
+                  organizationPreviewAvatarContainer: "w-6 h-6",
                   organizationPreviewMainIdentifier: isCollapsed ? "hidden" : "text-white font-medium",
-                  organizationSwitcherTriggerIcon: isCollapsed ? "hidden" : "",
+                  organizationSwitcherTriggerIcon: isCollapsed ? "hidden" : "text-white",
                 }
               }}
             />
           </div>
           {authStatus && (
-            <div className={`flex items-center gap-2 ${isCollapsed ? 'flex-col' : ''}`}>
-              <div className={`flex items-center justify-center rounded-full bg-accent/10 border border-accent/20 shadow-[0_0_10px_rgba(179,255,0,0.1)] ${isCollapsed ? 'w-8 h-8 p-0' : 'gap-1.5 px-2.5 py-1'}`}>
-                <Crown className="w-3.5 h-3.5 text-accent" />
-                {!isCollapsed && <span className="text-xs font-bold text-accent tracking-wide uppercase">{authStatus.plan}</span>}
+            <div className={`flex items-center gap-2 mt-1 ${isCollapsed ? 'flex-col' : ''}`}>
+              <div className={`flex items-center justify-center rounded-full bg-accent/10 border border-accent/20 shadow-[0_0_10px_rgba(179,255,0,0.1)] ${isCollapsed ? 'w-6 h-6 p-0' : 'gap-1 px-2 py-0.5'}`}>
+                <Crown className="w-3 h-3 text-accent" />
+                {!isCollapsed && <span className="text-[10px] font-bold text-accent tracking-wide uppercase">{authStatus.plan}</span>}
               </div>
               {authStatus.org_role && (
-                <div className={`flex items-center justify-center rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)] ${isCollapsed ? 'w-8 h-8 p-0' : 'gap-1.5 px-2.5 py-1'}`}>
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                  {!isCollapsed && <span className="text-xs font-bold text-blue-400 tracking-wide uppercase">{authStatus.org_role}</span>}
+                <div className={`flex items-center justify-center rounded-full bg-blue-500/10 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)] ${isCollapsed ? 'w-6 h-6 p-0' : 'gap-1 px-2 py-0.5'}`}>
+                  <ShieldCheck className="w-3 h-3 text-blue-400" />
+                  {!isCollapsed && <span className="text-[10px] font-bold text-blue-400 tracking-wide uppercase">{authStatus.org_role}</span>}
                 </div>
               )}
             </div>
@@ -104,11 +105,11 @@ export default function DashboardLayout({
                 } ${
                   isActive 
                     ? "bg-accent/10 text-accent" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    : "text-muted-foreground hover:bg-white hover:text-white"
                 }`}
                 title={isCollapsed ? item.name : undefined}
               >
-                <Icon className={`w-5 h-5 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
+                <Icon className={`w-5 h-5 ${isActive ? "text-accent" : "text-muted-foreground group-hover:text-white"}`} />
                 {!isCollapsed && <span>{item.name}</span>}
               </Link>
             );
@@ -119,10 +120,11 @@ export default function DashboardLayout({
           <UserButton 
             showName={!isCollapsed}
             appearance={{
+              variables: { colorText: "white" },
               elements: {
                 userButtonBox: isCollapsed ? "justify-center" : "w-full flex justify-start gap-2",
-                userButtonAvatarBox: "w-9 h-9 border border-border order-1",
-                userButtonOuterIdentifier: "text-foreground font-medium order-2 pl-2",
+                userButtonAvatarBox: "w-8 h-8 border border-border order-1",
+                userButtonOuterIdentifier: "text-white font-medium order-2 pl-2",
               }
             }}
           />

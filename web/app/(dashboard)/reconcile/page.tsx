@@ -361,7 +361,7 @@ export default function ReconcilePage() {
 
             <div className="flex justify-end pt-4 border-t border-border">
               <button
-                className="px-6 py-3 bg-accent text-accent-foreground font-semibold rounded-xl hover:bg-accent/90 transition-all shadow-lg hover:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-accent text-black font-semibold rounded-xl hover:bg-accent/90 transition-all shadow-lg hover:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={sourceFiles.length === 0 || targetFiles.length === 0 || (mode === 'batch' && sourceFiles.length !== targetFiles.length)}
                 onClick={handleProceedToMap}
               >
