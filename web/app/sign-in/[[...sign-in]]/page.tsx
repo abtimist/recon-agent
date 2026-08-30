@@ -35,28 +35,29 @@ export default function Page() {
       >
         <div className="bg-card rounded-xl overflow-hidden p-2">
           <SignIn 
-            appearance={{
+            appearance={({
+              baseTheme: dark as any,
               variables: {
                 colorPrimary: "#b3ff00",
                 colorBackground: "#0a0a0a",
               },
               elements: {
-                formButtonPrimary: "text-black font-semibold hover:shadow-[0_0_15px_rgba(179,255,0,0.3)] transition-all bg-[#b3ff00]",
+                formButtonPrimary: "!text-black font-semibold hover:shadow-[0_0_15px_rgba(179,255,0,0.3)] transition-all !bg-[#b3ff00]",
                 card: "bg-transparent shadow-none border-none w-full max-w-md",
-                headerTitle: "text-2xl font-bold tracking-tight text-white",
-                headerSubtitle: "text-gray-400",
-                socialButtonsBlockButton: "border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white",
-                socialButtonsBlockButtonText: "text-white font-medium",
-                formFieldInput: "border-white/10 bg-[#111] focus:border-[#b3ff00] transition-colors rounded-lg h-11 text-white",
-                formFieldLabel: "text-gray-300 font-medium",
-                dividerLine: "bg-white/10",
-                dividerText: "text-gray-500",
-                footerActionText: "text-gray-400",
-                footerActionLink: "text-[#b3ff00] hover:text-[#99cc00]",
-                identityPreviewText: "text-white",
-                identityPreviewEditButtonIcon: "text-gray-400 hover:text-white"
+                headerTitle: "!text-2xl font-bold tracking-tight !text-white",
+                headerSubtitle: "!text-gray-400",
+                socialButtonsBlockButton: "border border-white/10 !bg-white/5 hover:!bg-white/10 transition-colors !text-white",
+                socialButtonsBlockButtonText: "!text-white font-medium",
+                formFieldInput: "border-white/10 !bg-[#111] focus:!border-[#b3ff00] transition-colors rounded-lg h-11 !text-white",
+                formFieldLabel: "!text-gray-300 font-medium",
+                dividerLine: "!bg-white/10",
+                dividerText: "!text-gray-500",
+                footerActionText: "!text-gray-400",
+                footerActionLink: "!text-[#b3ff00] hover:!text-[#99cc00]",
+                identityPreviewText: "!text-white",
+                identityPreviewEditButtonIcon: "!text-gray-400 hover:!text-white"
               }
-            }} 
+            } as any)} 
           />
         </div>
       </motion.div>
